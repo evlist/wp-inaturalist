@@ -58,6 +58,13 @@ function wpinat_test_reset() {
 		'options'    => array(),
 		'transients' => array(),
 		'actions'    => array(),
+		'filters'    => array(),
+		'can'        => true,
+		'dies'       => array(),
+		'errors'     => array(),
+		'settings'   => array(),
+		'fields'     => array(),
+		'menu'       => array(),
 		'cleared'    => array(),
 		'textdomain' => array(),
 		'locale'     => 'en_US',
@@ -103,6 +110,72 @@ function wp_clear_scheduled_hook( $hook ) {
 function add_action( $hook, $callback, $priority = 10, $args = 1 ) {
 	$GLOBALS['wpinat_test']['actions'][] = array( $hook, $callback, $priority );
 	return true;
+}
+
+function add_filter( $hook, $callback, $priority = 10, $args = 1 ) {
+	$GLOBALS['wpinat_test']['filters'][] = array( $hook, $callback, $priority );
+	return true;
+}
+
+function __( $text, $domain = 'default' ) {
+	return $text;
+}
+
+function esc_html__( $text, $domain = 'default' ) {
+	return htmlspecialchars( $text, ENT_QUOTES );
+}
+
+function esc_html( $text ) {
+	return htmlspecialchars( (string) $text, ENT_QUOTES );
+}
+
+function esc_attr( $text ) {
+	return htmlspecialchars( (string) $text, ENT_QUOTES );
+}
+
+function absint( $value ) {
+	return abs( (int) $value );
+}
+
+function current_user_can( $capability ) {
+	return $GLOBALS['wpinat_test']['can'];
+}
+
+function wp_die( $message = '', $title = '', $args = array() ) {
+	$GLOBALS['wpinat_test']['dies'][] = array( $message, $args );
+	throw new \RuntimeException( 'wp_die' );
+}
+
+function add_settings_error( $setting, $code, $message, $type = 'error' ) {
+	$GLOBALS['wpinat_test']['errors'][] = $code;
+}
+
+function register_setting( $group, $name, $args = array() ) {
+	$GLOBALS['wpinat_test']['settings'][ $name ] = array( $group, $args );
+}
+
+function add_settings_section( $id, $title, $callback, $page ) {
+	$GLOBALS['wpinat_test']['sections'][] = array( $id, $page );
+}
+
+function add_settings_field( $id, $title, $callback, $page, $section, $args = array() ) {
+	$GLOBALS['wpinat_test']['fields'][ $id ] = array( $callback, $page, $section );
+}
+
+function add_options_page( $page_title, $menu_title, $capability, $slug, $callback ) {
+	$GLOBALS['wpinat_test']['menu'] = array( $capability, $slug, $callback );
+}
+
+function settings_fields( $group ) {
+	echo '<!--settings_fields ' . $group . '-->';
+}
+
+function do_settings_sections( $page ) {
+	echo '<!--sections ' . $page . '-->';
+}
+
+function submit_button() {
+	echo '<!--submit-->';
 }
 
 function load_plugin_textdomain( $domain, $deprecated = false, $path = false ) {
@@ -151,5 +224,6 @@ require_once WPINAT_DIR . 'includes/Throttle.php';
 require_once WPINAT_DIR . 'includes/INatException.php';
 require_once WPINAT_DIR . 'includes/Observation.php';
 require_once WPINAT_DIR . 'includes/INatClient.php';
+require_once WPINAT_DIR . 'includes/SettingsPage.php';
 require_once WPINAT_DIR . 'includes/Setup.php';
 require_once WPINAT_DIR . 'includes/Uninstaller.php';

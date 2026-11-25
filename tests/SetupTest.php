@@ -10,6 +10,7 @@
 
 namespace Evlist\WpInaturalist\Tests;
 
+use Evlist\WpInaturalist\SettingsPage;
 use Evlist\WpInaturalist\Setup;
 
 require_once __DIR__ . '/TestCase.php';
@@ -22,8 +23,16 @@ final class SetupTest extends TestCase {
 	public function test_register_adds_the_init_hook_with_an_explicit_priority() {
 		Setup::register();
 		$this->assertSame(
-			array( array( 'init', array( Setup::class, 'loadTextDomain' ), 10 ) ),
+			array(
+				array( 'init', array( Setup::class, 'loadTextDomain' ), 10 ),
+				array( 'admin_menu', array( SettingsPage::class, 'addMenu' ), 10 ),
+				array( 'admin_init', array( SettingsPage::class, 'registerSettings' ), 10 ),
+			),
 			$GLOBALS['wpinat_test']['actions']
+		);
+		$this->assertSame(
+			array( array( 'option_page_capability_wpinat_settings', array( SettingsPage::class, 'capability' ), 10 ) ),
+			$GLOBALS['wpinat_test']['filters']
 		);
 	}
 

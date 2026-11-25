@@ -30,6 +30,7 @@ require_once WPINAT_DIR . 'includes/Throttle.php';
 require_once WPINAT_DIR . 'includes/INatException.php';
 require_once WPINAT_DIR . 'includes/Observation.php';
 require_once WPINAT_DIR . 'includes/INatClient.php';
+require_once WPINAT_DIR . 'includes/SettingsPage.php';
 require_once WPINAT_DIR . 'includes/Setup.php';
 
 // No activation hook on purpose: nothing is created at activation (tables are created and migrated from the schema version, slice 004).

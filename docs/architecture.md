@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Architecture
 
-**Planned architecture: nothing below is implemented yet.** It changes as slices are written; wishes and undecided points are
+**Slices 001 to 003 are coded (foundation, API client, settings page); the rest is planned.** It changes as slices are written; wishes and undecided points are
 in [`open-questions.md`](open-questions.md).
 
 ## Flow
@@ -51,7 +51,7 @@ iNaturalist API, `GET https://api.inaturalist.org/v2/observations`. Checked agai
 | Block `wpinat/wp-inaturalist` (render, editor) | everybody (render, cache only), editors |
 | WP-Cron event `wpinat_refresh` (daily and single events) | WordPress |
 | REST route "refresh this post's period" | `edit_post` for that post + REST nonce |
-| Settings page | `manage_options` + nonce |
+| Settings page (Settings > iNaturalist), saved through `options.php` | `manage_options` (page and option group) + nonce of the option group |
 | Tools page (log, stop, resume, empty cache) | `manage_options` + nonce |
 | Activation, schema migration, uninstall | WordPress |
 

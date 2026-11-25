@@ -28,6 +28,10 @@ final class Setup {
 	 */
 	public static function register(): void {
 		add_action( 'init', array( self::class, 'loadTextDomain' ), 10 );
+		add_action( 'admin_menu', array( SettingsPage::class, 'addMenu' ), 10 );
+		add_action( 'admin_init', array( SettingsPage::class, 'registerSettings' ), 10 );
+		// Only the capability filter of our own option group: nothing shared with other plugins.
+		add_filter( 'option_page_capability_' . SettingsPage::GROUP, array( SettingsPage::class, 'capability' ), 10 );
 	}
 
 	/**
