@@ -96,4 +96,20 @@ final class CacheTest extends TestCase {
 		$this->cache()->clear();
 		$this->assertSame( 0, $this->cache()->count() );
 	}
+
+	public function test_get_between_returns_the_rows_of_the_login_and_period_oldest_first() {
+		$c = $this->cache();
+		$c->replaceRange( 'me', '2026-11-01', '2026-11-30', array( $this->observation( 3, '2026-11-20' ), $this->observation( 1, '2026-11-05' ), $this->observation( 2, '2026-11-20' ) ), 'fr', 1 );
+		$c->replaceRange( 'other', '2026-11-01', '2026-11-30', array( $this->observation( 9, '2026-11-10' ) ), 'fr', 1 );
+		$c->replaceRange( 'me', '2026-10-01', '2026-10-31', array( $this->observation( 8, '2026-10-31' ) ), 'fr', 1 );
+
+		$rows = $c->getBetween( 'me', '2026-11-01', '2026-11-30' );
+		$this->assertSame( array( 1, 2, 3 ), array_map( 'intval', array_column( $rows, 'observation_id' ) ) );
+		$this->assertSame( array(), $c->getBetween( 'nobody', '2026-11-01', '2026-11-30' ) );
+	}
+
+	public function test_get_between_prepares_its_values() {
+		$this->cache()->getBetween( "x' OR '1'='1", '2026-11-01', '2026-11-30' );
+		$this->assertStringContainsString( "user_login = 'x\\' OR \\'1\\'=\\'1'", end( $GLOBALS['wpdb']->queries ) );
+	}
 }

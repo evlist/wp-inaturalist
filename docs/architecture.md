@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Architecture
 
-**Slices 001 to 005 are coded (foundation, API client, settings page, cache and refresh job, refresh of a post, login check); the block and the index mark are planned.** It changes as slices are written; wishes and undecided points are
+**Slices 001 to 006 are coded (foundation, API client, settings page, cache and refresh job, refresh of a post, login check, the block); the index mark, the photos and the documentation are planned.** It changes as slices are written; wishes and undecided points are
 in [`open-questions.md`](open-questions.md).
 
 ## Flow
@@ -48,7 +48,7 @@ iNaturalist API, `GET https://api.inaturalist.org/v2/observations`. Checked agai
 
 | Entry point | Who may call it |
 | --- | --- |
-| Block `wpinat/wp-inaturalist` (render, editor) | everybody (render, cache only), editors |
+| Block `wpinat/wp-inaturalist` (`includes/Block.php`, `includes/Renderer.php`, `blocks/wp-inaturalist/`) | everybody (render, cache only), editors (preview) |
 | WP-Cron events `wpinat_refresh` (daily, starts the job over the last 14 days) and `wpinat_refresh_step` (single events, run the job by chunks) | WordPress |
 | REST `POST /wpinat/v1/refresh` (`post_id`; the server computes the period from the saved post) | `edit_post` for that post + REST nonce |
 | REST `POST /wpinat/v1/verify-login` (`login`) | `manage_options` + REST nonce |

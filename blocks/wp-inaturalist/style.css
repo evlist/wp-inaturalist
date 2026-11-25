@@ -1,0 +1,47 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+.wpinat-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+	gap: 1rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wpinat-entry {
+	margin: 0;
+}
+
+.wpinat-photo {
+	margin: 0 0 0.25rem;
+}
+
+.wpinat-photo img {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+}
+
+.wpinat-credit {
+	font-size: 0.7em;
+	opacity: 0.75;
+}
+
+.wpinat-latin {
+	opacity: 0.8;
+}
+
+.wpinat-count {
+	opacity: 0.8;
+	white-space: nowrap;
+}
+
+.wpinat-hint {
+	font-style: italic;
+	opacity: 0.8;
+}

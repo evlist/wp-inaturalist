@@ -14,6 +14,7 @@ define( 'ABSPATH', __DIR__ . '/' );
 define( 'WPINAT_VERSION', 'test' );
 define( 'WPINAT_FILE', dirname( __DIR__ ) . '/wp-inaturalist.php' );
 define( 'WPINAT_DIR', dirname( __DIR__ ) . '/' );
+define( 'ARRAY_A', 'ARRAY_A' );
 
 /** Minimal WP_REST_Request. */
 class WP_REST_Request {
@@ -103,6 +104,26 @@ class WPINAT_Fake_Wpdb {
 		);
 	}
 
+	public function get_results( $sql, $output = 'OBJECT' ) {
+		$this->queries[] = $sql;
+		if ( ! preg_match( "/WHERE user_login = '(.*?)' AND observed_on BETWEEN '(.*?)' AND '(.*?)' ORDER BY observed_on ASC, observation_id ASC$/", $sql, $m ) ) {
+			return null;
+		}
+		$out = array();
+		foreach ( $this->rows as $row ) {
+			if ( $row['user_login'] === $m[1] && $row['observed_on'] >= $m[2] && $row['observed_on'] <= $m[3] ) {
+				$out[] = $row;
+			}
+		}
+		usort(
+			$out,
+			static function ( $a, $b ) {
+				return array( $a['observed_on'], $a['observation_id'] ) <=> array( $b['observed_on'], $b['observation_id'] );
+			}
+		);
+		return $out;
+	}
+
 	public function get_var( $sql ) {
 		return count( $this->rows );
 	}
@@ -117,31 +138,34 @@ class WPINAT_Fake_Wpdb {
  */
 function wpinat_test_reset() {
 	$GLOBALS['wpinat_test'] = array(
-		'options'    => array(),
-		'transients' => array(),
-		'actions'    => array(),
-		'filters'    => array(),
-		'can'        => true,
-		'dies'       => array(),
-		'errors'     => array(),
-		'settings'   => array(),
-		'fields'     => array(),
-		'menu'       => array(),
-		'scheduled'  => array(),
-		'dbdelta'    => array(),
-		'redirects'  => array(),
-		'nonces'     => array(),
-		'nonce_ok'   => true,
-		'autoload'   => array(),
-		'posts'      => array(),
-		'routes'     => array(),
-		'scripts'    => array(),
-		'inline'     => array(),
-		'blocks'     => null,
-		'cap_ids'    => array(),
-		'cleared'    => array(),
-		'textdomain' => array(),
-		'locale'     => 'en_US',
+		'options'      => array(),
+		'transients'   => array(),
+		'actions'      => array(),
+		'filters'      => array(),
+		'can'          => true,
+		'dies'         => array(),
+		'errors'       => array(),
+		'settings'     => array(),
+		'fields'       => array(),
+		'menu'         => array(),
+		'scheduled'    => array(),
+		'dbdelta'      => array(),
+		'redirects'    => array(),
+		'nonces'       => array(),
+		'nonce_ok'     => true,
+		'autoload'     => array(),
+		'posts'        => array(),
+		'routes'       => array(),
+		'scripts'      => array(),
+		'inline'       => array(),
+		'blocks'       => null,
+		'cap_ids'      => array(),
+		'registered'   => array(),
+		'block_types'  => array(),
+		'current_post' => null,
+		'cleared'      => array(),
+		'textdomain'   => array(),
+		'locale'       => 'en_US',
 	);
 	$GLOBALS['wpdb']        = new WPINAT_Fake_Wpdb();
 }
@@ -321,8 +345,21 @@ function current_user_can( $capability, ...$args ) {
 	return $GLOBALS['wpinat_test']['can'];
 }
 
-function get_post( $id ) {
+function get_post( $id = null ) {
+	if ( null === $id ) {
+		return isset( $GLOBALS['wpinat_test']['current_post'] ) ? $GLOBALS['wpinat_test']['current_post'] : null;
+	}
 	return isset( $GLOBALS['wpinat_test']['posts'][ $id ] ) ? $GLOBALS['wpinat_test']['posts'][ $id ] : null;
+}
+
+function wp_register_script( $handle, $src = '', $deps = array(), $ver = false, $in_footer = false ) {
+	$GLOBALS['wpinat_test']['registered'][ $handle ] = array( $src, $deps, $ver, $in_footer );
+	return true;
+}
+
+function register_block_type( $path, $args = array() ) {
+	$GLOBALS['wpinat_test']['block_types'][] = array( $path, $args );
+	return true;
 }
 
 function parse_blocks( $content ) {
@@ -449,6 +486,8 @@ require_once WPINAT_DIR . 'includes/Period.php';
 require_once WPINAT_DIR . 'includes/PostRefresh.php';
 require_once WPINAT_DIR . 'includes/Rest.php';
 require_once WPINAT_DIR . 'includes/Assets.php';
+require_once WPINAT_DIR . 'includes/Renderer.php';
+require_once WPINAT_DIR . 'includes/Block.php';
 require_once WPINAT_DIR . 'includes/ToolsPage.php';
 require_once WPINAT_DIR . 'includes/SettingsPage.php';
 require_once WPINAT_DIR . 'includes/Setup.php';

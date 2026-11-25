@@ -9,6 +9,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <arg name="extensions" value="php"/>
     <arg name="colors"/>
     <file>includes</file>
+    <file>blocks</file>
     <file>tests</file>
     <file>uninstall.php</file>
     <file>wp-inaturalist.php</file>

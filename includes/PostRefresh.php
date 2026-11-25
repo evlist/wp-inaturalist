@@ -20,6 +20,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class PostRefresh {
 
 	/**
+	 * Local date of a post (Y-m-d), today for a post that has none yet.
+	 *
+	 * @param object $post Post.
+	 */
+	public static function dateOf( $post ): string {
+		$date = substr( (string) $post->post_date, 0, 10 );
+		return ( '0000-00-00' === $date || '' === $date ) ? wp_date( 'Y-m-d' ) : $date;
+	}
+
+	/**
 	 * Asks for the refresh of the period of a post.
 	 *
 	 * @param object   $post Post (post_date and post_content are read).
@@ -27,10 +37,7 @@ final class PostRefresh {
 	 * @return string "started", "queued", "no_block", "no_login" or "bad_range".
 	 */
 	public static function refresh( $post, ?Job $job = null ): string {
-		$date = substr( (string) $post->post_date, 0, 10 );
-		if ( '0000-00-00' === $date || '' === $date ) {
-			$date = wp_date( 'Y-m-d' );
-		}
+		$date = self::dateOf( $post );
 		try {
 			$range = Period::forContent( (string) $post->post_content, $date );
 		} catch ( \InvalidArgumentException $e ) {

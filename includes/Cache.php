@@ -100,6 +100,21 @@ final class Cache {
 	}
 
 	/**
+	 * Cached observations of a user over a date range, oldest first.
+	 *
+	 * @param string $login iNaturalist login.
+	 * @param string $from  First day (Y-m-d).
+	 * @param string $to    Last day (Y-m-d).
+	 * @return array<int,array<string,mixed>> Rows of the table.
+	 */
+	public function getBetween( string $login, string $from, string $to ): array {
+		// The table name is built from the site prefix and a constant; the values are prepared.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $this->db->get_results( $this->db->prepare( "SELECT * FROM {$this->table} WHERE user_login = %s AND observed_on BETWEEN %s AND %s ORDER BY observed_on ASC, observation_id ASC", $login, $from, $to ), ARRAY_A );
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Number of cached observations.
 	 */
 	public function count(): int {

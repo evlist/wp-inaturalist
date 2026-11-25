@@ -11,6 +11,7 @@
 namespace Evlist\WpInaturalist\Tests;
 
 use Evlist\WpInaturalist\Assets;
+use Evlist\WpInaturalist\Block;
 use Evlist\WpInaturalist\PostRefresh;
 use Evlist\WpInaturalist\Rest;
 use Evlist\WpInaturalist\Schema;
@@ -34,23 +35,24 @@ final class SetupTest extends TestCase {
 		}
 		$this->assertSame(
 			array(
-				'init -> ' . Setup::class . '::loadTextDomain'                     => 10,
-				'plugins_loaded -> ' . Schema::class . '::maybeMigrate'             => 10,
-				'init -> ' . Scheduler::class . '::ensureScheduled'                 => 20,
+				'init -> ' . Setup::class . '::loadTextDomain' => 10,
+				'plugins_loaded -> ' . Schema::class . '::maybeMigrate' => 10,
+				'init -> ' . Block::class . '::register' => 10,
+				'init -> ' . Scheduler::class . '::ensureScheduled' => 20,
 				'update_option_wpinat_refresh_hour -> ' . Scheduler::class . '::reschedule' => 10,
-				'wpinat_refresh -> ' . Scheduler::class . '::runDaily'              => 10,
-				'wpinat_refresh_step -> ' . Scheduler::class . '::runStep'          => 10,
+				'wpinat_refresh -> ' . Scheduler::class . '::runDaily' => 10,
+				'wpinat_refresh_step -> ' . Scheduler::class . '::runStep' => 10,
 				'transition_post_status -> ' . PostRefresh::class . '::onTransition' => 10,
-				'rest_api_init -> ' . Rest::class . '::register'                    => 10,
-				'admin_enqueue_scripts -> ' . Assets::class . '::enqueueSettings'   => 10,
+				'rest_api_init -> ' . Rest::class . '::register' => 10,
+				'admin_enqueue_scripts -> ' . Assets::class . '::enqueueSettings' => 10,
 				'enqueue_block_editor_assets -> ' . Assets::class . '::enqueueEditor' => 10,
-				'admin_menu -> ' . ToolsPage::class . '::addMenu'                   => 10,
-				'admin_post_wpinat_job_start -> ' . ToolsPage::class . '::onStart'  => 10,
-				'admin_post_wpinat_job_stop -> ' . ToolsPage::class . '::onStop'    => 10,
+				'admin_menu -> ' . ToolsPage::class . '::addMenu' => 10,
+				'admin_post_wpinat_job_start -> ' . ToolsPage::class . '::onStart' => 10,
+				'admin_post_wpinat_job_stop -> ' . ToolsPage::class . '::onStop' => 10,
 				'admin_post_wpinat_job_resume -> ' . ToolsPage::class . '::onResume' => 10,
 				'admin_post_wpinat_cache_clear -> ' . ToolsPage::class . '::onClear' => 10,
-				'admin_menu -> ' . SettingsPage::class . '::addMenu'                => 10,
-				'admin_init -> ' . SettingsPage::class . '::registerSettings'       => 10,
+				'admin_menu -> ' . SettingsPage::class . '::addMenu' => 10,
+				'admin_init -> ' . SettingsPage::class . '::registerSettings' => 10,
 			),
 			$actions
 		);

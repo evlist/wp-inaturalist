@@ -13,7 +13,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-25T14:53:31+00:00\n"
+"POT-Creation-Date: 2026-11-25T15:02:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-inaturalist\n"
@@ -90,6 +90,7 @@ msgid "This post has no iNaturalist block yet: add one and save the post."
 msgstr "Cet article n'a pas encore de bloc iNaturalist : ajoutez-en un et enregistrez l'article."
 
 #: includes/Assets.php:76
+#: includes/Block.php:69
 #: includes/ToolsPage.php:50
 msgid "Set the iNaturalist login in the settings first."
 msgstr "Renseignez d'abord l'identifiant iNaturalist dans les réglages."
@@ -101,6 +102,46 @@ msgstr "La date de cet article est inutilisable."
 #: includes/Assets.php:78
 msgid "The refresh could not be requested."
 msgstr "Le rafraîchissement n'a pas pu être demandé."
+
+#: includes/Block.php:46
+msgid "Period"
+msgstr "Période"
+
+#: includes/Block.php:47
+msgid "Number of units"
+msgstr "Nombre d'unités"
+
+#: includes/Block.php:48
+msgid "Unit"
+msgstr "Unité"
+
+#: includes/Block.php:49
+msgid "Days"
+msgstr "Jours"
+
+#: includes/Block.php:50
+msgid "Weeks"
+msgstr "Semaines"
+
+#: includes/Block.php:51
+msgid "Months"
+msgstr "Mois"
+
+#: includes/Block.php:52
+msgid "The period ends on the date of the post."
+msgstr "La période se termine à la date de l'article."
+
+#: includes/Block.php:53
+msgid "Nothing to show yet."
+msgstr "Rien à afficher pour l'instant."
+
+#: includes/Block.php:88
+msgid "No observation in the cache for this period. Save the post, then use \"Refresh observations\" in the sidebar."
+msgstr "Aucune observation dans le cache pour cette période. Enregistrez l'article, puis utilisez « Rafraîchir les observations » dans la barre latérale."
+
+#: includes/Renderer.php:80
+msgid "We observed the following species on iNaturalist:"
+msgstr "Nous avons observé les espèces suivantes sur iNaturalist :"
 
 #: includes/SettingsPage.php:74
 msgid "Observations"
@@ -277,3 +318,13 @@ msgstr "Rien pour l'instant."
 #: includes/ToolsPage.php:181
 msgid "You do not have permission to do this."
 msgstr "Vous n'avez pas la permission de faire cela."
+
+#: blocks/wp-inaturalist/block.json
+msgctxt "block title"
+msgid "iNaturalist observations"
+msgstr "Observations iNaturalist"
+
+#: blocks/wp-inaturalist/block.json
+msgctxt "block description"
+msgid "Lists the species observed on iNaturalist around the date of the post."
+msgstr "Liste les espèces observées sur iNaturalist autour de la date de l'article."

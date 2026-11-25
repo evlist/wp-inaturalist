@@ -1,0 +1,26 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wpinat/wp-inaturalist",
+	"version": "0.1.0",
+	"title": "iNaturalist observations",
+	"category": "widgets",
+	"icon": "palmtree",
+	"description": "Lists the species observed on iNaturalist around the date of the post.",
+	"supports": {
+		"html": false
+	},
+	"textdomain": "wp-inaturalist",
+	"editorScript": "wpinat-block-editor",
+	"style": "file:./style.css",
+	"attributes": {
+		"periodNumber": {
+			"type": "number",
+			"default": 1
+		},
+		"periodUnit": {
+			"type": "string",
+			"default": "day"
+		}
+	}
+}

@@ -29,6 +29,7 @@ final class Setup {
 	public static function register(): void {
 		add_action( 'init', array( self::class, 'loadTextDomain' ), 10 );
 		add_action( 'plugins_loaded', array( Schema::class, 'maybeMigrate' ), 10 );
+		add_action( 'init', array( Block::class, 'register' ), 10 );
 		add_action( 'init', array( Scheduler::class, 'ensureScheduled' ), 20 );
 		add_action( 'update_option_' . Config::REFRESH_HOUR, array( Scheduler::class, 'reschedule' ), 10 );
 		add_action( Config::CRON_HOOK, array( Scheduler::class, 'runDaily' ), 10 );

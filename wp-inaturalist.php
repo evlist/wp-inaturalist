@@ -39,6 +39,8 @@ require_once WPINAT_DIR . 'includes/Period.php';
 require_once WPINAT_DIR . 'includes/PostRefresh.php';
 require_once WPINAT_DIR . 'includes/Rest.php';
 require_once WPINAT_DIR . 'includes/Assets.php';
+require_once WPINAT_DIR . 'includes/Renderer.php';
+require_once WPINAT_DIR . 'includes/Block.php';
 require_once WPINAT_DIR . 'includes/ToolsPage.php';
 require_once WPINAT_DIR . 'includes/SettingsPage.php';
 require_once WPINAT_DIR . 'includes/Setup.php';
