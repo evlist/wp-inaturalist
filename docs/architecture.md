@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Architecture
 
-**Slices 001 to 003 are coded (foundation, API client, settings page); the rest is planned.** It changes as slices are written; wishes and undecided points are
+**Slices 001 to 004 are coded (foundation, API client, settings page, cache and refresh job); the block, the editor refresh and the index mark are planned.** It changes as slices are written; wishes and undecided points are
 in [`open-questions.md`](open-questions.md).
 
 ## Flow
@@ -49,14 +49,15 @@ iNaturalist API, `GET https://api.inaturalist.org/v2/observations`. Checked agai
 | Entry point | Who may call it |
 | --- | --- |
 | Block `wpinat/wp-inaturalist` (render, editor) | everybody (render, cache only), editors |
-| WP-Cron event `wpinat_refresh` (daily and single events) | WordPress |
+| WP-Cron events `wpinat_refresh` (daily, starts the job over the last 14 days) and `wpinat_refresh_step` (single events, run the job by chunks) | WordPress |
 | REST route "refresh this post's period" | `edit_post` for that post + REST nonce |
 | Settings page (Settings > iNaturalist), saved through `options.php` | `manage_options` (page and option group) + nonce of the option group |
-| Tools page (log, stop, resume, empty cache) | `manage_options` + nonce |
+| Tools > iNaturalist (status, log) and `admin-post.php` actions `wpinat_job_start`, `wpinat_job_stop`, `wpinat_job_resume`, `wpinat_cache_clear` | `manage_options` + one nonce per action |
 | Activation, schema migration, uninstall | WordPress |
 
 ## Stored data (planned)
 
-- Options (names, defaults, getters in `Config`): iNaturalist login, names language, quality threshold, schema version, job state.
-- Cache table with a schema version: one row per observation (id, taxon, dates, photos as JSON, fetch time).
+- Options (names, defaults, getters in `Config`): login, names language, quality, refresh hour; `wpinat_schema_version`, `wpinat_job_state`, `wpinat_job_log` (not autoloaded), `wpinat_job_lock`.
+- Table `{prefix}wpinat_observations` (`includes/Schema.php`, migrated from the schema version on `plugins_loaded`): one row per observation (id, login, taxon and names, dates, quality, photos as JSON, fetch time).
+- Transient `wpinat_last_request` (throttle).
 - Everything is removed by `uninstall.php`.

@@ -28,9 +28,15 @@ final class Config {
 	const SCHEMA_VERSION = 'wpinat_schema_version';
 	const JOB_STATE      = 'wpinat_job_state';
 	const JOB_LOG        = 'wpinat_job_log';
+	const JOB_LOCK       = 'wpinat_job_lock';
 
-	const CRON_HOOK    = 'wpinat_refresh';
-	const TABLE_SUFFIX = 'wpinat_observations';
+	const CRON_HOOK = 'wpinat_refresh';
+	const STEP_HOOK = 'wpinat_refresh_step';
+
+	const DAILY_WINDOW_DAYS = 14;
+	const CHUNK_DAYS        = 31;
+	const MAX_RANGE_DAYS    = 3660;
+	const TABLE_SUFFIX      = 'wpinat_observations';
 
 	const QUALITY_RESEARCH = 'research';
 	const QUALITY_ANY      = 'any';
@@ -59,7 +65,7 @@ final class Config {
 	public static function allOptionNames(): array {
 		return array_merge(
 			array_keys( self::settings() ),
-			array( self::SCHEMA_VERSION, self::JOB_STATE, self::JOB_LOG )
+			array( self::SCHEMA_VERSION, self::JOB_STATE, self::JOB_LOG, self::JOB_LOCK )
 		);
 	}
 

@@ -13,7 +13,7 @@ One document per feature, written before the code. A slice is documented, then c
 | [001](001-foundation.md) | Foundation: plugin header, `Config`, uninstall, text domain, test set-up | none | coded; tests and phpcs pass; not tried on a real site |
 | [002](002-api-client.md) | iNaturalist API client with throttle | 001 | coded; tested with recorded real answers and once against the real API; not tried inside WordPress |
 | [003](003-settings-security.md) | Settings page, capability and nonce checks | 001 | coded; tested (stubs); not tried inside WordPress |
-| 004 | Cache table (versioned schema) and the cron refresh job (progress, stop, resume, log) | 001, 002, 003 | to write |
+| [004](004-cache-and-refresh-job.md) | Cache table (versioned schema) and the cron refresh job (progress, stop, resume, log) | 001, 002, 003 | coded; see its verification status |
 | 005 | Refresh on publication and on demand from the editor (REST) | 004 | to write |
 | 006 | Block and rendering of the species list | 004 | to write |
 | 007 | `data-index` mark for `wp-otherguise` | 006 | to write |

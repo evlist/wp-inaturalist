@@ -30,8 +30,16 @@ require_once WPINAT_DIR . 'includes/Throttle.php';
 require_once WPINAT_DIR . 'includes/INatException.php';
 require_once WPINAT_DIR . 'includes/Observation.php';
 require_once WPINAT_DIR . 'includes/INatClient.php';
+require_once WPINAT_DIR . 'includes/Schema.php';
+require_once WPINAT_DIR . 'includes/Cache.php';
+require_once WPINAT_DIR . 'includes/JobLog.php';
+require_once WPINAT_DIR . 'includes/Job.php';
+require_once WPINAT_DIR . 'includes/Scheduler.php';
+require_once WPINAT_DIR . 'includes/ToolsPage.php';
 require_once WPINAT_DIR . 'includes/SettingsPage.php';
 require_once WPINAT_DIR . 'includes/Setup.php';
 
-// No activation hook on purpose: nothing is created at activation (tables are created and migrated from the schema version, slice 004).
+// No activation hook on purpose: nothing is created at activation (the table is created and migrated from the schema version).
+// Deactivation only removes the scheduled events; uninstall.php removes the data.
+register_deactivation_hook( __FILE__, array( \Evlist\WpInaturalist\Scheduler::class, 'deactivate' ) );
 \Evlist\WpInaturalist\Setup::register();

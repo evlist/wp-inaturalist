@@ -30,6 +30,7 @@ final class Uninstaller {
 		}
 		delete_transient( Throttle::TRANSIENT );
 		wp_clear_scheduled_hook( Config::CRON_HOOK );
+		wp_clear_scheduled_hook( Config::STEP_HOOK );
 
 		global $wpdb;
 		$table = Config::tableName( $wpdb );

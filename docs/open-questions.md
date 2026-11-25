@@ -36,14 +36,19 @@ On one real account over 2026-10-01 to 2026-11-24 "research" kept 13 of 28 obser
 duplicates of one species in a period (one entry with a count, or one per observation). Obscured or private coordinates are
 not shown anyway.
 
+Provisional choices made in slice 004 (see its document): quality follows the setting, observations without photo are kept,
+one entry per observation is stored (grouping is for the renderer).
+
 ## 3. Language of the names
 
 Use the site locale for `preferred_common_name`, with a fallback to the Latin name. Is a per-block override wanted?
 
 ## 4. Cron details
 
-Time of the daily run; how far back it looks (only the periods of recent posts, or the whole account once); what a forced
-refresh on publication does when the post date is in the past.
+Provisional (slice 004): the daily run looks at the last 14 days, a manual range can go back up to about ten years, and the
+refresh on publication and from the editor (slice 005) will fetch the period of that post. Still open: the time of the daily
+run is a setting (default 3 h, site time); is a full-account backfill wanted as a one-click action; what a refresh on
+publication does when the post date is in the past.
 
 ## 5. Wikipedia link in the site language
 

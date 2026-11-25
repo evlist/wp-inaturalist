@@ -35,7 +35,7 @@ final class UninstallerTest extends TestCase {
 		}
 		$this->assertSame( 'Not ours', get_option( 'blogname' ), 'options of others are kept' );
 		$this->assertFalse( get_transient( Throttle::TRANSIENT ) );
-		$this->assertSame( array( Config::CRON_HOOK ), $GLOBALS['wpinat_test']['cleared'] );
+		$this->assertSame( array( Config::CRON_HOOK, Config::STEP_HOOK ), $GLOBALS['wpinat_test']['cleared'] );
 		$this->assertSame( array( 'DROP TABLE IF EXISTS `wp_wpinat_observations`' ), $GLOBALS['wpdb']->queries );
 	}
 

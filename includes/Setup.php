@@ -28,6 +28,16 @@ final class Setup {
 	 */
 	public static function register(): void {
 		add_action( 'init', array( self::class, 'loadTextDomain' ), 10 );
+		add_action( 'plugins_loaded', array( Schema::class, 'maybeMigrate' ), 10 );
+		add_action( 'init', array( Scheduler::class, 'ensureScheduled' ), 20 );
+		add_action( 'update_option_' . Config::REFRESH_HOUR, array( Scheduler::class, 'reschedule' ), 10 );
+		add_action( Config::CRON_HOOK, array( Scheduler::class, 'runDaily' ), 10 );
+		add_action( Config::STEP_HOOK, array( Scheduler::class, 'runStep' ), 10 );
+		add_action( 'admin_menu', array( ToolsPage::class, 'addMenu' ), 10 );
+		add_action( 'admin_post_' . ToolsPage::ACTION_START, array( ToolsPage::class, 'onStart' ), 10 );
+		add_action( 'admin_post_' . ToolsPage::ACTION_STOP, array( ToolsPage::class, 'onStop' ), 10 );
+		add_action( 'admin_post_' . ToolsPage::ACTION_RESUME, array( ToolsPage::class, 'onResume' ), 10 );
+		add_action( 'admin_post_' . ToolsPage::ACTION_CLEAR, array( ToolsPage::class, 'onClear' ), 10 );
 		add_action( 'admin_menu', array( SettingsPage::class, 'addMenu' ), 10 );
 		add_action( 'admin_init', array( SettingsPage::class, 'registerSettings' ), 10 );
 		// Only the capability filter of our own option group: nothing shared with other plugins.
