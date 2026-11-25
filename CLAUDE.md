@@ -32,11 +32,14 @@ stored in a local cache; page views never call the API. The map of the code is i
 - **Tests**: PHPUnit for PHP (WordPress functions stubbed in `tests/bootstrap.php`, the API stubbed with recorded responses),
   jsdom or `node --test` for scripts, `phpcs` (WordPress standard) for style, **from the first commit**. Every entry point
   (block, REST route, cron job, admin screen, uninstall) has a test; check that a new test fails without the change it covers.
+- **Set-up**: `composer install`, then `vendor/bin/phpunit` and `vendor/bin/phpcs`. If Composer plugins are disabled (as in cloud
+  sessions), phpcs does not find the WordPress standard: run `vendor/bin/phpcs --config-set installed_paths` with the paths of
+  `vendor/wp-coding-standards/wpcs`, `vendor/phpcsstandards/phpcsutils` and `vendor/phpcsstandards/phpcsextra`, comma separated.
 - **Security**: every handler checks a capability and a nonce. The public side serves the cache only. No token is ever stored:
   only public observations are read.
 - **Cron**: the refresh is a background job with progress, stop and resume, and a log; the server never trusts selections sent
   by the browser (the editor sends a post id, the server computes the period).
-- **Hooks**: set explicit priorities in one place (`includes/plugin-setup.php`) and prefix handles.
+- **Hooks**: set explicit priorities in one place (`includes/Setup.php`) and prefix handles.
 - **Translations**: text domain `wp-inaturalist`, never translate a variable; regenerate `.pot`, `.po`, `.mo`, `.l10n.php` and JSON
   files with WP-CLI whenever a string changes.
 - **Cache schema** carries a version stored in an option and migrated on `plugins_loaded`: activation must never be the only

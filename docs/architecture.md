@@ -23,15 +23,26 @@ in [`open-questions.md`](open-questions.md).
 
 ## External service
 
-iNaturalist API v1, `GET https://api.inaturalist.org/v1/observations`. The following is **from memory and must be checked
-against the documentation and the real API in slice 002** (nothing has been called yet):
+iNaturalist API, `GET https://api.inaturalist.org/v2/observations`. Checked against the real API on 2026-11-25
+(slice 002); recorded answers are in `tests/fixtures/`.
 
-- filters `user_id` or `user_login`, `d1` / `d2` (observed date range), `per_page` (up to 200), `page`, `order_by`,
-  `locale` (names), `quality_grade`;
-- each result has `id`, `uuid`, `uri`, `observed_on`, `time_observed_at`, `quality_grade`, `geoprivacy`, `taxon`
-  (`id`, `name`, `preferred_common_name`, `rank`, `iconic_taxon_name`, `default_photo`, `wikipedia_url`) and `photos`
-  (`id`, `url`, `attribution`, `license_code`);
-- polite use: about one request per second, a descriptive `User-Agent`.
+- **v2, not v1.** v1 returns about 130 KB per observation; v2 returns only the fields named in the `fields` parameter
+  (rison syntax, constant `INatClient::FIELDS`), which is about 1 KB per observation. A `fields` value that is not valid
+  rison gives HTTP 422.
+- Filters used: `user_login`, `d1` / `d2` (inclusive dates), `per_page` (200 at most), `page`, `order_by=observed_on`,
+  `locale` (language of `preferred_common_name`), `quality_grade=research` (omitted for "any").
+- Answer: `total_results`, `page`, `per_page`, `results`. A result has `id`, `uuid`, `uri`, `observed_on`, `time_observed_at`
+  (null when the observer gave no time), `observed_time_zone`, `quality_grade`, `geoprivacy`, `obscured`, `taxon`
+  (`id`, `name`, `rank`, `preferred_common_name`, `wikipedia_url`, `iconic_taxon_name`) and `photos`
+  (`id`, `url`, `attribution`, `license_code`). `taxon` is absent for an observation with no identification.
+- `preferred_common_name` is **absent when the taxon has no name in the requested language** (seen: a spider with none in
+  French): the Latin name is the fallback.
+- `wikipedia_url` is the **English** page, with an `http://` scheme.
+- Photo URLs are the `square` size; `small`, `medium`, `large` and `original` exist at the same path (answered 200 for one photo).
+- Errors seen: 422 with `{"status","errors":[{"errorCode","message"}]}` for an unknown login. The 429 case and its
+  `Retry-After` header were **never seen**: the code handles them from the HTTP convention only.
+- No rate-limit header was seen. Polite use: one request per second (`Throttle`) and a descriptive `User-Agent` carrying the
+  site URL.
 
 ## Planned entry points
 

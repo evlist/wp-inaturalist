@@ -1,0 +1,9 @@
+{
+    "status": "422",
+    "errors": [
+        {
+            "errorCode": "422",
+            "message": "Unknown user_id zz_no_such_user_zz"
+        }
+    ]
+}

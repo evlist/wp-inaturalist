@@ -31,7 +31,8 @@ credit and licence.
 
 ## 2. Which observations to show
 
-Quality grade threshold (research grade only, or also "needs id"), observations without photo, casual observations, and
+Quality grade threshold (research grade only, or also "needs id"; the setting exists, its default `research` is provisional.
+On one real account over 2026-10-01 to 2026-11-24 "research" kept 13 of 28 observations), observations without photo, casual observations, and
 duplicates of one species in a period (one entry with a count, or one per observation). Obscured or private coordinates are
 not shown anyway.
 
@@ -43,3 +44,9 @@ Use the site locale for `preferred_common_name`, with a fallback to the Latin na
 
 Time of the daily run; how far back it looks (only the periods of recent posts, or the whole account once); what a forced
 refresh on publication does when the post date is in the past.
+
+## 5. Wikipedia link in the site language
+
+iNaturalist gives only the English Wikipedia page (`http://en.wikipedia.org/wiki/...`). wp-whobird gets the pages from
+Wikidata. Options: link to the English page as given (with `https`); or ask Wikidata for the page in the site language
+(a second external service and a cache, as in wp-whobird); or link to the iNaturalist taxon page only.
