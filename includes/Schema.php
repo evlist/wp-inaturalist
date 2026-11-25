@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Schema {
 
-	const VERSION = 2;
+	const VERSION = 3;
 
 	/**
 	 * Creates or updates the table when the stored version is older than {@see Schema::VERSION}.
@@ -31,7 +31,13 @@ final class Schema {
 		}
 		global $wpdb;
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		dbDelta( self::createSql( Config::tableName( $wpdb ), $wpdb->get_charset_collate() ) );
+		$charset = $wpdb->get_charset_collate();
+		dbDelta(
+			array(
+				self::createSql( Config::tableName( $wpdb ), $charset ),
+				self::createTaxaSql( Config::taxaTableName( $wpdb ), $charset ),
+			)
+		);
 		update_option( Config::SCHEMA_VERSION, self::VERSION );
 	}
 
@@ -64,6 +70,24 @@ final class Schema {
   PRIMARY KEY  (observation_id),
   KEY user_date (user_login,observed_on),
   KEY taxon (taxon_id)
+) {$charset};";
+	}
+
+	/**
+	 * The statement of the table of the Wikidata items of the taxa (added in version 3).
+	 *
+	 * @param string $table   Table name.
+	 * @param string $charset Charset and collation clause.
+	 */
+	public static function createTaxaSql( string $table, string $charset ): string {
+		return "CREATE TABLE {$table} (
+  taxon_id bigint(20) unsigned NOT NULL,
+  lang varchar(8) NOT NULL DEFAULT '',
+  qid varchar(32) DEFAULT NULL,
+  label varchar(255) DEFAULT NULL,
+  wikipedia_url varchar(500) DEFAULT NULL,
+  checked_at datetime NOT NULL,
+  PRIMARY KEY  (taxon_id)
 ) {$charset};";
 	}
 }

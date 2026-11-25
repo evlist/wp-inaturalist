@@ -21,7 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Throttle {
 
-	const TRANSIENT = 'wpinat_last_request';
+	const TRANSIENT          = 'wpinat_last_request';
+	const WIKIDATA_TRANSIENT = 'wpinat_last_wikidata';
 
 	/**
 	 * Minimal delay in seconds.
@@ -45,14 +46,23 @@ final class Throttle {
 	private $sleep;
 
 	/**
+	 * Name of the transient holding the time of the last request.
+	 *
+	 * @var string
+	 */
+	private $transient;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param float         $minInterval Minimal delay in seconds.
 	 * @param callable|null $clock       Replaceable clock (tests).
 	 * @param callable|null $sleep       Replaceable sleep (tests).
+	 * @param string        $transient   Transient of this service: each service has its own delay.
 	 */
-	public function __construct( float $minInterval = 1.0, ?callable $clock = null, ?callable $sleep = null ) {
+	public function __construct( float $minInterval = 1.0, ?callable $clock = null, ?callable $sleep = null, string $transient = self::TRANSIENT ) {
 		$this->minInterval = $minInterval;
+		$this->transient   = $transient;
 		$this->clock       = $clock ? $clock : 'microtime';
 		$this->sleep       = $sleep ? $sleep : static function ( $seconds ) {
 			usleep( (int) round( $seconds * 1000000 ) );
@@ -63,7 +73,7 @@ final class Throttle {
 	 * Waits if the last request is too recent, then records the time of this one.
 	 */
 	public function wait(): void {
-		$last = get_transient( self::TRANSIENT );
+		$last = get_transient( $this->transient );
 		$now  = (float) call_user_func( $this->clock, true );
 		if ( is_numeric( $last ) ) {
 			$remaining = $this->minInterval - ( $now - (float) $last );
@@ -72,6 +82,6 @@ final class Throttle {
 				$now += $remaining;
 			}
 		}
-		set_transient( self::TRANSIENT, $now, 60 );
+		set_transient( $this->transient, $now, 60 );
 	}
 }

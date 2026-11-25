@@ -16,6 +16,6 @@ One document per feature, written before the code. A slice is documented, then c
 | [004](004-cache-and-refresh-job.md) | Cache table (versioned schema) and the cron refresh job (progress, stop, resume, log) | 001, 002, 003 | coded; see its verification status |
 | [005](005-post-refresh-and-login-check.md) | Refresh on publication and on demand from the editor (REST); check of the login on the settings page | 004 | coded; see its verification status |
 | [006](006-block.md) | Block and rendering of the species list | 004, 005 | coded; see its verification status |
-| 007 | `data-index` mark for `wp-otherguise` | 006 | to write |
+| [007](007-wikidata-and-index-mark.md) | Wikidata identifiers of the taxa and the `data-index` mark for `wp-otherguise` | 004, 006 | coded; see its verification status |
 | [008](008-photos-media-library.md) | Photos: match with the media library (EXIF time), manual link, report | 006, open question 1 | coded; see its verification status |
 | 009 | Translations, release zip, documentation | all | to write |

@@ -166,4 +166,27 @@ final class BlockTest extends TestCase {
 		$GLOBALS['wpinat_test']['current_post']->post_date = '2026-11-20 10:00:00';
 		$this->assertStringNotContainsString( 'wpinat-hint', Block::render(), 'no hint when there is something to show' );
 	}
+
+	public function test_the_block_puts_the_index_mark_from_the_taxa_table() {
+		$GLOBALS['wpdb']->taxa_rows[1003] = array(
+			'taxon_id'      => 1003,
+			'lang'          => 'fr',
+			'qid'           => 'Q42',
+			'label'         => 'Espèce trois',
+			'wikipedia_url' => null,
+			'checked_at'    => '2026-11-25 10:00:00',
+		);
+		$html                             = Block::render();
+		$this->assertStringContainsString( 'wikidata:Q42', $html );
+		$this->assertStringContainsString( 'Espèce trois', $html );
+		$this->assertSame( 1, substr_count( $html, 'data-index=' ) );
+	}
+
+	public function test_the_block_never_asks_wikidata() {
+		Block::render();
+		$this->assertSame( array(), $GLOBALS['wpinat_test']['scheduled'] );
+		foreach ( $GLOBALS['wpdb']->queries as $sql ) {
+			$this->assertStringNotContainsString( 'INSERT', $sql );
+		}
+	}
 }

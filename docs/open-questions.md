@@ -60,6 +60,9 @@ refresh on publication and from the editor (slice 005) will fetch the period of 
 run is a setting (default 3 h, site time); is a full-account backfill wanted as a one-click action; what a refresh on
 publication does when the post date is in the past.
 
+Slice 007 now stores the Wikipedia article in the site language, found through Wikidata (not displayed yet): the choice below
+is reduced to whether and how to show it.
+
 ## 5. Wikipedia link in the site language
 
 iNaturalist gives only the English Wikipedia page (`http://en.wikipedia.org/wiki/...`). wp-whobird gets the pages from
@@ -75,3 +78,19 @@ each. Nothing is decided. Points to settle together: card or grid (or both, chos
 (the grid favours the photos, which are the point of iNaturalist observations); the credit line, which the licences of the photos
 require and which the whobird cards do not have; a Wikipedia link (see question 5); and the shared markup and style, possibly
 shared with wp-whobird through `wp-otherguise` so that both blocks follow the same design. No code depends on this.
+
+## 7. Describe the link in the media library metadata (raised by Eric on 2026-11-25, possible improvement)
+
+The report of slice 008 found photos for 30 observations out of 30 on Eric's gallery. Eric would like the information (which
+iNaturalist observation a photo belongs to, its taxon, perhaps the licence) to be recorded as **metadata of the attachment** in the
+media library, in a format to define. Today only the manual link exists (`_wpinat_observation_id`). Points to decide: the format
+(a few post meta keys, a structured value, or taxonomy terms such as a `species` taxonomy on attachments); written by the
+refresh job, by a button, or both; whether `wp-otherguise` or `wp-media-helper` should read it; and what to do when the link
+changes later.
+
+## 8. Several photos per observation (raised by Eric on 2026-11-25, possible improvement)
+
+An observation can have several photos; the plugin handles only the first one (the one that carries the time of the
+observation). To decide: show the other photos too (a small gallery per species, or a lightbox), match each of them with
+the media library (each has its own EXIF time, so each can be matched on its own), and how this fits the card or grid
+presentation of question 6. The cached data already keeps all the photos of an observation.

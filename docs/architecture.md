@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Architecture
 
-**Slices 001 to 006 and 008 are coded (foundation, API client, settings page, cache and refresh job, refresh of a post, login check, the block, photos of the media library); the index mark (007) and the final documentation (009) are planned.** It changes as slices are written; wishes and undecided points are
+**Slices 001 to 008 are coded (foundation, API client, settings page, cache and refresh job, refresh of a post, login check, the block, Wikidata and the index mark, photos of the media library); only the final documentation (009) is planned.** It changes as slices are written; wishes and undecided points are
 in [`open-questions.md`](open-questions.md).
 
 ## Flow
@@ -44,6 +44,12 @@ iNaturalist API, `GET https://api.inaturalist.org/v2/observations`. Checked agai
 - No rate-limit header was seen. Polite use: one request per second (`Throttle`) and a descriptive `User-Agent` carrying the
   site URL.
 
+## Second external service: Wikidata
+
+`query.wikidata.org/sparql`, called only by the refresh job (slice 007) for the taxa that need it, in batches of 50, one request per
+second: which item has the iNaturalist taxon id (property P3151), with its label and Wikipedia article in the site language.
+The answer is stored in the table `wpinat_taxa` and used for the `data-index` mark. Checked against the real service on 2026-11-25.
+
 ## Planned entry points
 
 | Entry point | Who may call it |
@@ -62,5 +68,6 @@ iNaturalist API, `GET https://api.inaturalist.org/v2/observations`. Checked agai
 
 - Options (names, defaults, getters in `Config`): login, names language, quality, refresh hour; `wpinat_schema_version`, `wpinat_job_state`, `wpinat_job_log` (not autoloaded), `wpinat_job_lock`, `wpinat_job_queue` (ranges waiting for the running job, not autoloaded).
 - Table `{prefix}wpinat_observations` (`includes/Schema.php`, migrated from the schema version on `plugins_loaded`): one row per observation (id, login, taxon and names, dates, quality, photos as JSON, fetch time, and the media library attachment linked to it, schema version 2). The manual link of a photo to an observation is the attachment's meta `_wpinat_observation_id`.
-- Transient `wpinat_last_request` (throttle).
+- Table `{prefix}wpinat_taxa` (schema version 3): one row per iNaturalist taxon id with its Wikidata item, label and Wikipedia address in the site language, and the time of the check.
+- Transients `wpinat_last_request` and `wpinat_last_wikidata` (one throttle per service).
 - Everything is removed by `uninstall.php`.

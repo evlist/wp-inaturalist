@@ -68,6 +68,13 @@ final class Job {
 	private $linker;
 
 	/**
+	 * Resolves the Wikidata items of the taxa (optional).
+	 *
+	 * @var object|null
+	 */
+	private $resolver;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Cache         $cache         Cache.
@@ -75,13 +82,15 @@ final class Job {
 	 * @param JobLog        $log           Log.
 	 * @param callable|null $now           Replaceable clock (tests).
 	 * @param object|null   $linker        Object with linkRange() (see {@see PhotoLinker}).
+	 * @param object|null   $resolver      Object with resolve() (see {@see TaxonResolver}).
 	 */
-	public function __construct( Cache $cache, callable $clientFactory, JobLog $log, ?callable $now = null, $linker = null ) {
+	public function __construct( Cache $cache, callable $clientFactory, JobLog $log, ?callable $now = null, $linker = null, $resolver = null ) {
 		$this->cache         = $cache;
 		$this->clientFactory = $clientFactory;
 		$this->log           = $log;
 		$this->now           = $now ? $now : 'time';
 		$this->linker        = $linker;
+		$this->resolver      = $resolver;
 	}
 
 	/**
@@ -390,6 +399,7 @@ final class Job {
 				);
 				$this->cache->replaceRange( $login, $from, $to, $observations, $locale, (int) call_user_func( $this->now ) );
 				$this->linkPhotos( $login, $from, $to );
+				$this->resolveTaxa( $login, $from, $to, $locale );
 			} catch ( INatException $e ) {
 				$this->handleApiError( $e );
 				return;
@@ -434,6 +444,34 @@ final class Job {
 			$this->linker->linkRange( $login, $from, $to );
 		} catch ( \Throwable $e ) {
 			$this->log->add( 'warning', 'Linking the photos of the media library failed: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Finds the Wikidata items of the taxa just stored. A failure here is logged and never fails the job: the next refresh tries again.
+	 *
+	 * @param string $login  iNaturalist login.
+	 * @param string $from   First day (Y-m-d).
+	 * @param string $to     Last day (Y-m-d).
+	 * @param string $locale Language of the names, also used for Wikidata labels and the Wikipedia.
+	 */
+	private function resolveTaxa( string $login, string $from, string $to, string $locale ): void {
+		if ( null === $this->resolver ) {
+			return;
+		}
+		try {
+			$ids = array();
+			foreach ( $this->cache->getBetween( $login, $from, $to ) as $row ) {
+				if ( ! empty( $row['taxon_id'] ) ) {
+					$ids[] = (int) $row['taxon_id'];
+				}
+			}
+			$stats = $this->resolver->resolve( array_values( array_unique( $ids ) ), $locale, (int) call_user_func( $this->now ) );
+			if ( $stats['found'] + $stats['absent'] > 0 ) {
+				$this->log->add( 'info', sprintf( 'Wikidata: %d taxon/taxa with an item, %d without.', $stats['found'], $stats['absent'] ) );
+			}
+		} catch ( \Throwable $e ) {
+			$this->log->add( 'warning', 'Resolving the taxa with Wikidata failed: ' . $e->getMessage() );
 		}
 	}
 

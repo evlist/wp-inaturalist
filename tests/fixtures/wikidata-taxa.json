@@ -1,0 +1,52 @@
+{
+    "head": {
+        "vars": [
+            "id",
+            "item",
+            "label",
+            "article"
+        ]
+    },
+    "results": {
+        "bindings": [
+            {
+                "item": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q726389"
+                },
+                "article": {
+                    "type": "uri",
+                    "value": "https://fr.wikipedia.org/wiki/Cardinal_rouge"
+                },
+                "label": {
+                    "xml:lang": "fr",
+                    "type": "literal",
+                    "value": "Cardinal rouge"
+                },
+                "id": {
+                    "type": "literal",
+                    "value": "9083"
+                }
+            },
+            {
+                "item": {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q829683"
+                },
+                "article": {
+                    "type": "uri",
+                    "value": "https://fr.wikipedia.org/wiki/Moqueur_polyglotte"
+                },
+                "label": {
+                    "xml:lang": "fr",
+                    "type": "literal",
+                    "value": "Moqueur polyglotte"
+                },
+                "id": {
+                    "type": "literal",
+                    "value": "14886"
+                }
+            }
+        ]
+    }
+}

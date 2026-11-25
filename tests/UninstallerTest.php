@@ -27,6 +27,7 @@ final class UninstallerTest extends TestCase {
 		}
 		update_option( 'blogname', 'Not ours' );
 		set_transient( Throttle::TRANSIENT, 1.0 );
+		set_transient( Throttle::WIKIDATA_TRANSIENT, 1.0 );
 
 		Uninstaller::run();
 
@@ -35,8 +36,9 @@ final class UninstallerTest extends TestCase {
 		}
 		$this->assertSame( 'Not ours', get_option( 'blogname' ), 'options of others are kept' );
 		$this->assertFalse( get_transient( Throttle::TRANSIENT ) );
+		$this->assertFalse( get_transient( Throttle::WIKIDATA_TRANSIENT ) );
 		$this->assertSame( array( Config::CRON_HOOK, Config::STEP_HOOK ), $GLOBALS['wpinat_test']['cleared'] );
-		$this->assertSame( array( 'DROP TABLE IF EXISTS `wp_wpinat_observations`' ), $GLOBALS['wpdb']->queries );
+		$this->assertSame( array( 'DROP TABLE IF EXISTS `wp_wpinat_observations`', 'DROP TABLE IF EXISTS `wp_wpinat_taxa`' ), $GLOBALS['wpdb']->queries );
 	}
 
 	public function test_uninstall_file_does_the_work_when_wordpress_asks() {
@@ -45,6 +47,6 @@ final class UninstallerTest extends TestCase {
 		define( 'WP_UNINSTALL_PLUGIN', 'wp-inaturalist/wp-inaturalist.php' );
 		require dirname( __DIR__ ) . '/uninstall.php';
 		$this->assertFalse( get_option( Config::LOGIN, false ) );
-		$this->assertCount( 1, $GLOBALS['wpdb']->queries );
+		$this->assertCount( 2, $GLOBALS['wpdb']->queries, 'both tables are dropped' );
 	}
 }

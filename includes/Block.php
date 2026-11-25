@@ -83,7 +83,8 @@ final class Block {
 			return '';
 		}
 		global $wpdb;
-		$html = Renderer::html( ( new Cache( $wpdb ) )->getBetween( $login, $range[0], $range[1] ) );
+		$rows = ( new Cache( $wpdb ) )->getBetween( $login, $range[0], $range[1] );
+		$html = Renderer::html( $rows, ( new Taxa( $wpdb ) )->get( array_column( Renderer::group( $rows ), 'taxon_id' ) ) );
 		if ( '' === $html && $editing ) {
 			return self::hint( __( 'No observation in the cache for this period. Save the post, then use "Refresh observations" in the sidebar.', 'wp-inaturalist' ) );
 		}

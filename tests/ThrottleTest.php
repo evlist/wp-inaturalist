@@ -60,4 +60,32 @@ final class ThrottleTest extends TestCase {
 		$throttle->wait();
 		$this->assertSame( array(), $sleeps );
 	}
+
+	public function test_each_service_has_its_own_delay() {
+		$sleeps = array();
+		$a      = new Throttle(
+			1.0,
+			static function () {
+				return 100.0;
+			},
+			static function ( $s ) use ( &$sleeps ) {
+				$sleeps[] = $s;
+			}
+		);
+		$b      = new Throttle(
+			1.0,
+			static function () {
+				return 100.2;
+			},
+			static function ( $s ) use ( &$sleeps ) {
+				$sleeps[] = $s;
+			},
+			Throttle::WIKIDATA_TRANSIENT
+		);
+		$a->wait();
+		$b->wait();
+		$this->assertSame( array(), $sleeps, 'a request to one service does not delay the other' );
+		$this->assertSame( 100.0, get_transient( Throttle::TRANSIENT ) );
+		$this->assertSame( 100.2, get_transient( Throttle::WIKIDATA_TRANSIENT ) );
+	}
 }

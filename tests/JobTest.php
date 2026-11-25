@@ -472,6 +472,16 @@ final class JobTest extends TestCase {
 	 * @param object $linker Linker.
 	 */
 	private function jobWithLinker( $linker ): Job {
+		return $this->jobWith( $linker, null );
+	}
+
+	/**
+	 * A job with a linker and a resolver (any objects with linkRange() and resolve()).
+	 *
+	 * @param object|null $linker   Linker.
+	 * @param object|null $resolver Resolver.
+	 */
+	private function jobWith( $linker, $resolver ): Job {
 		$test   = $this;
 		$client = new class( $test ) {
 			private $test;
@@ -495,7 +505,8 @@ final class JobTest extends TestCase {
 			function () {
 				return $this->time;
 			},
-			$linker
+			$linker,
+			$resolver
 		);
 	}
 
@@ -532,5 +543,40 @@ final class JobTest extends TestCase {
 		$this->assertContains( 'Linking the photos of the media library failed: media library unavailable', $this->logMessages() );
 		$levels = array_column( ( new JobLog() )->entries(), 'level' );
 		$this->assertContains( 'warning', $levels );
+	}
+
+	public function test_the_taxa_are_resolved_after_each_range_with_the_language_of_the_names() {
+		$resolver = new class() {
+			public $calls = array();
+			public function resolve( $ids, $lang, $now ) {
+				$this->calls[] = array( $ids, $lang );
+				return array(
+					'found'  => count( $ids ),
+					'absent' => 0,
+				);
+			}
+		};
+		$job      = $this->jobWith( null, $resolver );
+		$job->start( '2026-10-01', '2026-11-05', 'manual' );
+		$this->script = array( array( $this->observation( 1, '2026-10-10' ), $this->observation( 2, '2026-10-11' ) ), array( $this->observation( 3, '2026-11-02' ) ) );
+		$job->step();
+		$this->assertSame( array( array( array( 1001, 1002 ), 'fr' ), array( array( 1003 ), 'fr' ) ), $resolver->calls );
+		$this->assertContains( 'Wikidata: 2 taxon/taxa with an item, 0 without.', $this->logMessages() );
+		$this->assertSame( Job::DONE, $job->state()['status'] );
+	}
+
+	public function test_a_wikidata_failure_is_a_warning_and_never_fails_the_job() {
+		$resolver = new class() {
+			public function resolve( $ids, $lang, $now ) {
+				throw new INatException( INatException::SERVER, 'Server error 503.' );
+			}
+		};
+		$job      = $this->jobWith( null, $resolver );
+		$job->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->script = array( array( $this->observation( 1, '2026-11-02' ) ) );
+		$job->step();
+		$this->assertSame( Job::DONE, $job->state()['status'] );
+		$this->assertSame( array( 1 ), array_keys( $GLOBALS['wpdb']->rows ) );
+		$this->assertContains( 'Resolving the taxa with Wikidata failed: Server error 503.', $this->logMessages() );
 	}
 }

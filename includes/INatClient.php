@@ -168,34 +168,13 @@ final class INatClient {
 	}
 
 	/**
-	 * One throttled GET. Transport errors, 429 and 5xx are raised; any other status is returned to the caller.
+	 * One throttled GET (see {@see Http::get()}).
 	 *
 	 * @param string $url Full URL.
 	 * @return array{0:int,1:string} Status code and body.
 	 * @throws INatException On a transport error, 429 or 5xx.
 	 */
 	private function get( string $url ): array {
-		$this->throttle->wait();
-		$response = call_user_func(
-			$this->http,
-			$url,
-			array(
-				'timeout'    => 20,
-				'user-agent' => 'wp-inaturalist/' . WPINAT_VERSION . ' (' . home_url() . ')',
-				'headers'    => array( 'Accept' => 'application/json' ),
-			)
-		);
-		if ( is_wp_error( $response ) ) {
-			throw new INatException( INatException::NETWORK, 'The request failed: ' . $response->get_error_message() );
-		}
-		$code = (int) wp_remote_retrieve_response_code( $response );
-		if ( 429 === $code ) {
-			$retry = wp_remote_retrieve_header( $response, 'retry-after' );
-			throw new INatException( INatException::RATE_LIMITED, 'Too many requests.', is_numeric( $retry ) ? (int) $retry : null );
-		}
-		if ( $code >= 500 ) {
-			throw new INatException( INatException::SERVER, 'Server error ' . $code . '.' );
-		}
-		return array( $code, (string) wp_remote_retrieve_body( $response ) );
+		return Http::get( $this->throttle, $this->http, $url );
 	}
 }

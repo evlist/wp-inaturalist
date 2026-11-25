@@ -46,6 +46,10 @@ final class Config {
 	const CHUNK_DAYS        = 31;
 	const MAX_RANGE_DAYS    = 3660;
 	const TABLE_SUFFIX      = 'wpinat_observations';
+	const TAXA_SUFFIX       = 'wpinat_taxa';
+	const TAXA_BATCH        = 50;
+	const TAXA_FOUND_TTL    = 7776000;  // 90 days.
+	const TAXA_ABSENT_TTL   = 2592000;  // 30 days.
 
 	const QUALITY_RESEARCH = 'research';
 	const QUALITY_ANY      = 'any';
@@ -145,6 +149,15 @@ final class Config {
 	 */
 	public static function getUseMediaLibrary(): bool {
 		return 0 !== (int) self::raw( self::USE_MEDIA );
+	}
+
+	/**
+	 * Name of the table of the Wikidata items of the taxa.
+	 *
+	 * @param \wpdb $wpdb WordPress database object.
+	 */
+	public static function taxaTableName( $wpdb ): string {
+		return $wpdb->prefix . self::TAXA_SUFFIX;
 	}
 
 	/**

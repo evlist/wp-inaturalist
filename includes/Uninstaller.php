@@ -29,6 +29,7 @@ final class Uninstaller {
 			delete_option( $name );
 		}
 		delete_transient( Throttle::TRANSIENT );
+		delete_transient( Throttle::WIKIDATA_TRANSIENT );
 		wp_clear_scheduled_hook( Config::CRON_HOOK );
 		wp_clear_scheduled_hook( Config::STEP_HOOK );
 
@@ -37,5 +38,8 @@ final class Uninstaller {
 		// The table name is built from the site prefix and a constant, and there is nothing to prepare.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" );
+		$taxa = Config::taxaTableName( $wpdb );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( "DROP TABLE IF EXISTS `{$taxa}`" );
 	}
 }

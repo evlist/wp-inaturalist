@@ -67,6 +67,8 @@ class WPINAT_Fake_Wpdb {
 	public $rows = array();
 	/** @var bool */
 	public $fail_replace = false;
+	/** @var array<int,array> Rows of the table of the taxa. */
+	public $taxa_rows = array();
 	/** @var array */
 	public $last_update = array();
 	/** @var string */
@@ -111,6 +113,10 @@ class WPINAT_Fake_Wpdb {
 		if ( $this->fail_replace ) {
 			return false;
 		}
+		if ( 'wp_wpinat_taxa' === $table ) {
+			$this->taxa_rows[ $data['taxon_id'] ] = $data;
+			return 1;
+		}
 		$this->rows[ $data['observation_id'] ] = $data;
 		return 1;
 	}
@@ -134,6 +140,16 @@ class WPINAT_Fake_Wpdb {
 		$this->queries[] = $sql;
 		if ( false !== strpos( $sql, 'FROM wp_postmeta pm' ) ) {
 			return array_shift( $this->scripted_results );
+		}
+		if ( preg_match( '/^SELECT (.*?) FROM wp_wpinat_taxa WHERE (qid IS NOT NULL AND )?taxon_id IN \(([\d,]+)\)$/', $sql, $m ) ) {
+			$ids = explode( ',', $m[3] );
+			$out = array();
+			foreach ( $this->taxa_rows as $id => $row ) {
+				if ( in_array( (string) $id, $ids, true ) && ( '' === $m[2] || null !== $row['qid'] ) ) {
+					$out[] = $row;
+				}
+			}
+			return $out;
 		}
 		if ( preg_match( '/^SELECT \* FROM \S+ WHERE user_login = \'(.*?)\' ORDER BY observed_on DESC, observation_id DESC LIMIT (\d+)$/', $sql, $m ) ) {
 			$out = array_values(
@@ -171,6 +187,16 @@ class WPINAT_Fake_Wpdb {
 	}
 
 	public function get_var( $sql ) {
+		if ( false !== strpos( $sql, 'FROM wp_wpinat_taxa' ) ) {
+			return count(
+				array_filter(
+					$this->taxa_rows,
+					static function ( $r ) {
+						return null !== $r['qid'];
+					}
+				)
+			);
+		}
 		if ( false !== strpos( $sql, 'FROM wp_postmeta pm' ) ) {
 			$this->queries[] = $sql;
 			return array_shift( $this->scripted_vars );
@@ -528,8 +554,8 @@ function home_url() {
 	return 'https://blog.example.test';
 }
 
-function wp_json_encode( $value ) {
-	return json_encode( $value );
+function wp_json_encode( $value, $flags = 0, $depth = 512 ) {
+	return json_encode( $value, $flags, $depth );
 }
 
 function wp_parse_url( $url, $component = -1 ) {
@@ -561,6 +587,10 @@ require_once WPINAT_DIR . 'includes/Schema.php';
 require_once WPINAT_DIR . 'includes/Cache.php';
 require_once WPINAT_DIR . 'includes/JobLog.php';
 require_once WPINAT_DIR . 'includes/Job.php';
+require_once WPINAT_DIR . 'includes/Http.php';
+require_once WPINAT_DIR . 'includes/Taxa.php';
+require_once WPINAT_DIR . 'includes/WikidataClient.php';
+require_once WPINAT_DIR . 'includes/TaxonResolver.php';
 require_once WPINAT_DIR . 'includes/AttachmentIndex.php';
 require_once WPINAT_DIR . 'includes/MediaFields.php';
 require_once WPINAT_DIR . 'includes/PhotoLinker.php';

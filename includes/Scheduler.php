@@ -31,7 +31,8 @@ final class Scheduler {
 			},
 			new JobLog(),
 			null,
-			new PhotoLinker( new Cache( $wpdb ), new AttachmentIndex( $wpdb ) )
+			new PhotoLinker( new Cache( $wpdb ), new AttachmentIndex( $wpdb ) ),
+			new TaxonResolver( new Taxa( $wpdb ), new WikidataClient( new Throttle( 1.0, null, null, Throttle::WIKIDATA_TRANSIENT ) ) )
 		);
 	}
 

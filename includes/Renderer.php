@@ -78,15 +78,16 @@ final class Renderer {
 	 * The list, or an empty string when there is nothing to show.
 	 *
 	 * @param array<int,array<string,mixed>> $rows Rows of the cache, oldest first.
+	 * @param array<int,array<string,mixed>> $taxa Wikidata items by taxon id (see {@see Taxa::get()}), for the index mark.
 	 */
-	public static function html( array $rows ): string {
+	public static function html( array $rows, array $taxa = array() ): string {
 		$groups = self::group( $rows );
 		if ( array() === $groups ) {
 			return '';
 		}
 		$items = '';
 		foreach ( $groups as $group ) {
-			$items .= self::entry( $group );
+			$items .= self::entry( $group, isset( $taxa[ $group['taxon_id'] ] ) ? $taxa[ $group['taxon_id'] ] : null );
 		}
 		return '<div class="wpinat-observations"><p class="wpinat-intro">'
 			. esc_html__( 'We observed the following species on iNaturalist:', 'wp-inaturalist' )
@@ -94,12 +95,36 @@ final class Renderer {
 	}
 
 	/**
+	 * The `data-index` attribute read by the Index module of wp-otherguise, or nothing without a well-formed Wikidata item.
+	 *
+	 * Same format as wp-whobird (one JSON object, with a `source`). The label is the Wikidata label in the site language and is
+	 * left out when there is none: never the iNaturalist common name, so that capitalisation is Wikidata's.
+	 *
+	 * @param array|null $item Wikidata item of the taxon: qid and label.
+	 */
+	private static function indexMark( ?array $item ): string {
+		if ( null === $item || ! isset( $item['qid'] ) || ! is_string( $item['qid'] ) || 1 !== preg_match( '/^Q[1-9][0-9]*$/', $item['qid'] ) ) {
+			return '';
+		}
+		$mark = array(
+			'topic' => 'wikidata:' . $item['qid'],
+			'kind'  => 'species',
+		);
+		if ( isset( $item['label'] ) && is_string( $item['label'] ) && '' !== trim( $item['label'] ) ) {
+			$mark['label'] = trim( $item['label'] );
+		}
+		$mark['source'] = 'inaturalist';
+		return ' data-index="' . esc_attr( (string) wp_json_encode( $mark, JSON_UNESCAPED_UNICODE ) ) . '"';
+	}
+
+	/**
 	 * One species.
 	 *
 	 * @param array<string,mixed> $group Entry of {@see Renderer::group()}.
+	 * @param array|null          $item  Wikidata item of the taxon, when known.
 	 */
-	private static function entry( array $group ): string {
-		$html = '<li class="wpinat-entry" data-taxon-id="' . esc_attr( (string) $group['taxon_id'] ) . '">';
+	private static function entry( array $group, ?array $item = null ): string {
+		$html = '<li class="wpinat-entry" data-taxon-id="' . esc_attr( (string) $group['taxon_id'] ) . '"' . self::indexMark( $item ) . '>';
 
 		$photo = $group['photo'];
 		// The media library copy when one is linked and WordPress can still output it, else the iNaturalist photo.
