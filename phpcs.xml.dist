@@ -71,6 +71,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <rule ref="WordPress.PHP.DiscouragedPHPFunctions">
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>
+    <rule ref="WordPress.DB.SlowDBQuery">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
     <rule ref="Squiz.Commenting.FileComment">
         <exclude-pattern>tests/scripts/*</exclude-pattern>
     </rule>

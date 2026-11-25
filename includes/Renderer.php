@@ -46,14 +46,21 @@ final class Renderer {
 					'count'    => 0,
 					'photo'    => null,
 					'uri'      => '',
+					'media'    => 0,
+					'score'    => 0,
 				);
 			}
 			++$groups[ $taxon ]['count'];
-			if ( null === $groups[ $taxon ]['photo'] ) {
-				$photos = isset( $row['photos'] ) ? json_decode( (string) $row['photos'], true ) : null;
-				if ( is_array( $photos ) && isset( $photos[0]['url'] ) && is_string( $photos[0]['url'] ) ) {
+			// The photo shown is the first one that has a linked media library copy, else the first iNaturalist photo.
+			$photos = isset( $row['photos'] ) ? json_decode( (string) $row['photos'], true ) : null;
+			if ( is_array( $photos ) && isset( $photos[0]['url'] ) && is_string( $photos[0]['url'] ) ) {
+				$media = isset( $row['attachment_id'] ) ? (int) $row['attachment_id'] : 0;
+				$score = $media > 0 ? 2 : 1;
+				if ( $score > $groups[ $taxon ]['score'] ) {
+					$groups[ $taxon ]['score'] = $score;
 					$groups[ $taxon ]['photo'] = $photos[0];
 					$groups[ $taxon ]['uri']   = isset( $row['uri'] ) ? (string) $row['uri'] : '';
+					$groups[ $taxon ]['media'] = $media;
 				}
 			}
 		}
@@ -95,8 +102,18 @@ final class Renderer {
 		$html = '<li class="wpinat-entry" data-taxon-id="' . esc_attr( (string) $group['taxon_id'] ) . '">';
 
 		$photo = $group['photo'];
-		if ( is_array( $photo ) && 0 === strpos( (string) $photo['url'], 'https://' ) ) {
-			$img   = '<img src="' . esc_url( Observation::photoUrl( (string) $photo['url'], 'medium' ) ) . '" alt="' . esc_attr( (string) $group['name'] ) . '" loading="lazy" />';
+		// The media library copy when one is linked and WordPress can still output it, else the iNaturalist photo.
+		$local = ( is_array( $photo ) && $group['media'] > 0 ) ? wp_get_attachment_image(
+			(int) $group['media'],
+			'medium',
+			false,
+			array(
+				'alt'     => (string) $group['name'],
+				'loading' => 'lazy',
+			)
+		) : '';
+		if ( is_array( $photo ) && ( '' !== $local || 0 === strpos( (string) $photo['url'], 'https://' ) ) ) {
+			$img   = '' !== $local ? $local : '<img src="' . esc_url( Observation::photoUrl( (string) $photo['url'], 'medium' ) ) . '" alt="' . esc_attr( (string) $group['name'] ) . '" loading="lazy" />';
 			$html .= '<figure class="wpinat-photo">';
 			$html .= ( '' !== $group['uri'] && 0 === strpos( (string) $group['uri'], 'https://' ) ) ? '<a href="' . esc_url( (string) $group['uri'] ) . '">' . $img . '</a>' : $img;
 			if ( ! empty( $photo['attribution'] ) && is_string( $photo['attribution'] ) ) {

@@ -61,18 +61,27 @@ final class Job {
 	private $now;
 
 	/**
+	 * Links the observations of a range to photos of the media library (optional).
+	 *
+	 * @var PhotoLinker|null
+	 */
+	private $linker;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Cache         $cache         Cache.
 	 * @param callable      $clientFactory Returns an {@see INatClient}.
 	 * @param JobLog        $log           Log.
 	 * @param callable|null $now           Replaceable clock (tests).
+	 * @param object|null   $linker        Object with linkRange() (see {@see PhotoLinker}).
 	 */
-	public function __construct( Cache $cache, callable $clientFactory, JobLog $log, ?callable $now = null ) {
+	public function __construct( Cache $cache, callable $clientFactory, JobLog $log, ?callable $now = null, $linker = null ) {
 		$this->cache         = $cache;
 		$this->clientFactory = $clientFactory;
 		$this->log           = $log;
 		$this->now           = $now ? $now : 'time';
+		$this->linker        = $linker;
 	}
 
 	/**
@@ -380,6 +389,7 @@ final class Job {
 					)
 				);
 				$this->cache->replaceRange( $login, $from, $to, $observations, $locale, (int) call_user_func( $this->now ) );
+				$this->linkPhotos( $login, $from, $to );
 			} catch ( INatException $e ) {
 				$this->handleApiError( $e );
 				return;
@@ -406,6 +416,24 @@ final class Job {
 				wp_schedule_single_event( (int) call_user_func( $this->now ) + 1, Config::STEP_HOOK );
 				return;
 			}
+		}
+	}
+
+	/**
+	 * Links the photos of the media library to the observations just stored. A failure here is logged and never fails the job.
+	 *
+	 * @param string $login iNaturalist login.
+	 * @param string $from  First day (Y-m-d).
+	 * @param string $to    Last day (Y-m-d).
+	 */
+	private function linkPhotos( string $login, string $from, string $to ): void {
+		if ( null === $this->linker ) {
+			return;
+		}
+		try {
+			$this->linker->linkRange( $login, $from, $to );
+		} catch ( \Throwable $e ) {
+			$this->log->add( 'warning', 'Linking the photos of the media library failed: ' . $e->getMessage() );
 		}
 	}
 

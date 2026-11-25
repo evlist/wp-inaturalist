@@ -12,6 +12,7 @@ namespace Evlist\WpInaturalist\Tests;
 
 use Evlist\WpInaturalist\Assets;
 use Evlist\WpInaturalist\Block;
+use Evlist\WpInaturalist\MediaFields;
 use Evlist\WpInaturalist\PostRefresh;
 use Evlist\WpInaturalist\Rest;
 use Evlist\WpInaturalist\Schema;
@@ -57,7 +58,11 @@ final class SetupTest extends TestCase {
 			$actions
 		);
 		$this->assertSame(
-			array( array( 'option_page_capability_wpinat_settings', array( SettingsPage::class, 'capability' ), 10 ) ),
+			array(
+				array( 'attachment_fields_to_edit', array( MediaFields::class, 'addField' ), 10 ),
+				array( 'attachment_fields_to_save', array( MediaFields::class, 'saveField' ), 10 ),
+				array( 'option_page_capability_wpinat_settings', array( SettingsPage::class, 'capability' ), 10 ),
+			),
 			$GLOBALS['wpinat_test']['filters']
 		);
 	}

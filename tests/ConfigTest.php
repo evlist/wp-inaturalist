@@ -24,6 +24,7 @@ final class ConfigTest extends TestCase {
 		$this->assertSame( 'research', Config::getQuality() );
 		$this->assertSame( 3, Config::getRefreshHour() );
 		$this->assertSame( 'en', Config::getNamesLocale() );
+		$this->assertTrue( Config::getUseMediaLibrary() );
 	}
 
 	public function test_names_locale_follows_the_site_locale_then_the_setting() {
@@ -74,5 +75,16 @@ final class ConfigTest extends TestCase {
 
 	public function test_table_name_uses_the_site_prefix() {
 		$this->assertSame( 'wp_wpinat_observations', Config::tableName( $GLOBALS['wpdb'] ) );
+	}
+
+	public function test_the_media_library_option_is_a_boolean_read_from_0_and_1() {
+		foreach ( array( 0, '0', false, '' ) as $off ) {
+			update_option( Config::USE_MEDIA, $off );
+			$this->assertFalse( Config::getUseMediaLibrary(), var_export( $off, true ) );
+		}
+		foreach ( array( 1, '1', true ) as $on ) {
+			update_option( Config::USE_MEDIA, $on );
+			$this->assertTrue( Config::getUseMediaLibrary(), var_export( $on, true ) );
+		}
 	}
 }

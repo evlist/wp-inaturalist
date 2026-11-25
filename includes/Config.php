@@ -25,6 +25,7 @@ final class Config {
 	const NAMES_LOCALE   = 'wpinat_names_locale';
 	const QUALITY        = 'wpinat_quality';
 	const REFRESH_HOUR   = 'wpinat_refresh_hour';
+	const USE_MEDIA      = 'wpinat_use_media_library';
 	const SCHEMA_VERSION = 'wpinat_schema_version';
 	const JOB_STATE      = 'wpinat_job_state';
 	const JOB_LOG        = 'wpinat_job_log';
@@ -34,6 +35,9 @@ final class Config {
 	const BLOCK_NAME = 'wpinat/wp-inaturalist';
 	const REST_NS    = 'wpinat/v1';
 	const MAX_QUEUE  = 20;
+
+	const MANUAL_LINK_META    = '_wpinat_observation_id';
+	const PHOTO_TOLERANCE_SEC = 2;
 
 	const CRON_HOOK = 'wpinat_refresh';
 	const STEP_HOOK = 'wpinat_refresh_step';
@@ -59,6 +63,7 @@ final class Config {
 			self::NAMES_LOCALE => '',
 			self::QUALITY      => self::QUALITY_RESEARCH,
 			self::REFRESH_HOUR => 3,
+			self::USE_MEDIA    => 1,
 		);
 	}
 
@@ -133,6 +138,13 @@ final class Config {
 		}
 		$defaults = self::settings();
 		return $defaults[ self::REFRESH_HOUR ];
+	}
+
+	/**
+	 * Whether the photos of the media library are used when they match an observation.
+	 */
+	public static function getUseMediaLibrary(): bool {
+		return 0 !== (int) self::raw( self::USE_MEDIA );
 	}
 
 	/**

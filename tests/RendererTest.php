@@ -215,4 +215,71 @@ final class RendererTest extends TestCase {
 			$this->assertStringNotContainsString( '<img', $html );
 		}
 	}
+
+	public function test_a_linked_media_library_photo_is_used_and_the_credit_stays() {
+		$GLOBALS['wpinat_test']['attachments'][55] = 'https://blog.example.test/wp-content/uploads/pie.jpg';
+		$html                                      = Renderer::html( array( $this->row( array( 'attachment_id' => 55 ) ) ) );
+		$this->assertStringContainsString( '<a href="https://www.inaturalist.org/observations/1"><img src="https://blog.example.test/wp-content/uploads/pie.jpg" alt="moqueur polyglotte" class="local" /></a>', $html );
+		$this->assertStringNotContainsString( 'inaturalist-open-data', $html );
+		$this->assertStringContainsString( '(c) Jean, some rights reserved (CC BY-NC)', $html );
+	}
+
+	public function test_a_linked_attachment_that_is_gone_falls_back_to_the_iNaturalist_photo() {
+		$html = Renderer::html( array( $this->row( array( 'attachment_id' => 999 ) ) ) );
+		$this->assertStringContainsString( 'inaturalist-open-data.s3.amazonaws.com/photos/9/medium.jpg', $html );
+		$this->assertStringNotContainsString( 'class="local"', $html );
+	}
+
+	public function test_the_first_observation_with_a_linked_photo_provides_the_photo_of_the_species() {
+		$GLOBALS['wpinat_test']['attachments'][55] = 'https://blog.example.test/wp-content/uploads/second.jpg';
+		$rows                                      = array(
+			$this->row(
+				array(
+					'observation_id' => 1,
+					'uri'            => 'https://www.inaturalist.org/observations/1',
+					'attachment_id'  => null,
+				)
+			),
+			$this->row(
+				array(
+					'observation_id' => 2,
+					'uri'            => 'https://www.inaturalist.org/observations/2',
+					'attachment_id'  => 55,
+				)
+			),
+			$this->row(
+				array(
+					'observation_id' => 3,
+					'uri'            => 'https://www.inaturalist.org/observations/3',
+					'attachment_id'  => 56,
+				)
+			),
+		);
+		$html                                      = Renderer::html( $rows );
+		$this->assertStringContainsString( 'observations/2"><img src="https://blog.example.test/wp-content/uploads/second.jpg"', $html );
+		$this->assertStringContainsString( '×3', $html );
+	}
+
+	public function test_an_attachment_id_without_any_iNaturalist_photo_shows_no_photo() {
+		$GLOBALS['wpinat_test']['attachments'][55] = 'https://blog.example.test/wp-content/uploads/x.jpg';
+		$html                                      = Renderer::html(
+			array(
+				$this->row(
+					array(
+						'attachment_id' => 55,
+						'photos'        => '[]',
+					)
+				),
+			)
+		);
+		$this->assertStringNotContainsString( '<figure', $html, 'the credit comes with an iNaturalist photo' );
+	}
+
+	public function test_a_hostile_attachment_id_is_only_ever_an_integer() {
+		$GLOBALS['wpinat_test']['attachments'][0] = 'https://blog.example.test/zero.jpg';
+		foreach ( array( '0', '-3', 'abc', null ) as $bad ) {
+			$html = Renderer::html( array( $this->row( array( 'attachment_id' => $bad ) ) ) );
+			$this->assertStringNotContainsString( 'class="local"', $html, var_export( $bad, true ) );
+		}
+	}
 }

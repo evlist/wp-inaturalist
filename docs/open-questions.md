@@ -29,6 +29,11 @@ Questions: which fields does the API really return for a photo; how are the gall
 best-effort automatic match with a manual override acceptable? Until decided, the plugin shows the iNaturalist photo with its
 credit and licence.
 
+**Slice 008 (coded) tests one answer: match by the wall-clock time of the shot** (EXIF `created_timestamp` of the attachment
+against the time of the observation, within 2 seconds), plus a manual link per attachment. Whether this finds the photos of
+Eric's gallery is unknown: the report in Tools > iNaturalist tells. If it does not, the other options below (file name,
+image content) remain open.
+
 ## 2. Which observations to show
 
 Quality grade threshold (research grade only, or also "needs id"; the setting exists, its default `research` is provisional.
@@ -60,3 +65,13 @@ publication does when the post date is in the past.
 iNaturalist gives only the English Wikipedia page (`http://en.wikipedia.org/wiki/...`). wp-whobird gets the pages from
 Wikidata. Options: link to the English page as given (with `https`); or ask Wikidata for the page in the site language
 (a second external service and a cache, as in wp-whobird); or link to the iNaturalist taxon page only.
+
+## 6. Presentation closer to wp-whobird (raised by Eric on 2026-11-25, to keep in mind)
+
+On the first real page the block works well. Eric wonders whether its presentation should be made more homogeneous with
+wp-whobird, which shows each bird as a **card** (rounded photo on the left, name in bold, Latin name in italic, a Wikipedia icon
+link) in a vertical list, followed by the audio player, while wp-inaturalist shows a **grid** of large photos with a credit under
+each. Nothing is decided. Points to settle together: card or grid (or both, chosen by a block option); size of the photos
+(the grid favours the photos, which are the point of iNaturalist observations); the credit line, which the licences of the photos
+require and which the whobird cards do not have; a Wikipedia link (see question 5); and the shared markup and style, possibly
+shared with wp-whobird through `wp-otherguise` so that both blocks follow the same design. No code depends on this.

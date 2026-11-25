@@ -29,7 +29,9 @@ final class Scheduler {
 			static function () {
 				return new INatClient( new Throttle() );
 			},
-			new JobLog()
+			new JobLog(),
+			null,
+			new PhotoLinker( new Cache( $wpdb ), new AttachmentIndex( $wpdb ) )
 		);
 	}
 

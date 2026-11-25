@@ -115,6 +115,31 @@ final class Cache {
 	}
 
 	/**
+	 * Records which media library attachment shows an observation (null for none).
+	 *
+	 * @param int      $observationId Observation id.
+	 * @param int|null $attachmentId  Attachment id.
+	 */
+	public function setAttachment( int $observationId, ?int $attachmentId ): void {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$this->db->update( $this->table, array( 'attachment_id' => $attachmentId ), array( 'observation_id' => $observationId ), array( '%d' ), array( '%d' ) );
+	}
+
+	/**
+	 * The latest cached observations of a user, newest first.
+	 *
+	 * @param string $login iNaturalist login.
+	 * @param int    $limit Maximal number of rows.
+	 * @return array<int,array<string,mixed>> Rows of the table.
+	 */
+	public function latest( string $login, int $limit ): array {
+		// The table name is built from the site prefix and a constant; the values are prepared.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		$rows = $this->db->get_results( $this->db->prepare( "SELECT * FROM {$this->table} WHERE user_login = %s ORDER BY observed_on DESC, observation_id DESC LIMIT %d", $login, $limit ), ARRAY_A );
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Number of cached observations.
 	 */
 	public function count(): int {

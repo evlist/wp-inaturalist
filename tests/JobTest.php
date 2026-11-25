@@ -465,4 +465,72 @@ final class JobTest extends TestCase {
 		$this->job()->startRolling();
 		$this->assertSame( 'cron', $this->job()->queue()[0][2] );
 	}
+
+	/**
+	 * A job with a linker (any object with linkRange()).
+	 *
+	 * @param object $linker Linker.
+	 */
+	private function jobWithLinker( $linker ): Job {
+		$test   = $this;
+		$client = new class( $test ) {
+			private $test;
+			public function __construct( $test ) {
+				$this->test = $test;
+			}
+			public function fetchObservations( $login, $from, $to, $options ) {
+				return $this->test->answer( $login, $from, $to, $options );
+			}
+		};
+		return new Job(
+			new Cache( $GLOBALS['wpdb'] ),
+			static function () use ( $client ) {
+				return $client;
+			},
+			new JobLog(
+				function () {
+					return $this->time;
+				}
+			),
+			function () {
+				return $this->time;
+			},
+			$linker
+		);
+	}
+
+	public function test_the_photos_are_linked_after_each_range_is_stored() {
+		$linker = new class() {
+			public $calls = array();
+			public $rows  = array();
+			public function linkRange( $login, $from, $to ) {
+				$this->calls[] = array( $login, $from, $to );
+				$this->rows[]  = count( $GLOBALS['wpdb']->rows );
+			}
+		};
+		$job    = $this->jobWithLinker( $linker );
+		$job->start( '2026-10-01', '2026-11-05', 'manual' );
+		$this->script = array( array( $this->observation( 1, '2026-10-10' ) ), array( $this->observation( 2, '2026-11-02' ) ) );
+		$job->step();
+		$this->assertSame( array( array( 'me', '2026-10-01', '2026-10-31' ), array( 'me', '2026-11-01', '2026-11-05' ) ), $linker->calls );
+		$this->assertSame( array( 1, 2 ), $linker->rows, 'each call comes after the observations of its range are in the cache' );
+		$this->assertSame( Job::DONE, $job->state()['status'] );
+	}
+
+	public function test_a_linking_failure_is_a_warning_and_never_fails_the_job() {
+		$linker = new class() {
+			public function linkRange( $login, $from, $to ) {
+				throw new \RuntimeException( 'media library unavailable' );
+			}
+		};
+		$job    = $this->jobWithLinker( $linker );
+		$job->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->script = array( array( $this->observation( 1, '2026-11-02' ) ) );
+		$job->step();
+		$this->assertSame( Job::DONE, $job->state()['status'] );
+		$this->assertSame( array( 1 ), array_keys( $GLOBALS['wpdb']->rows ), 'the observations are kept' );
+		$this->assertContains( 'Linking the photos of the media library failed: media library unavailable', $this->logMessages() );
+		$levels = array_column( ( new JobLog() )->entries(), 'level' );
+		$this->assertContains( 'warning', $levels );
+	}
 }

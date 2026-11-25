@@ -92,6 +92,25 @@ final class SettingsPageTest extends TestCase {
 		$this->assertStringContainsString( 'id="wpinat-verify-result" role="status"', $html );
 	}
 
+	public function test_the_media_library_checkbox_reflects_the_option() {
+		ob_start();
+		SettingsPage::fieldUseMedia();
+		$on = ob_get_clean();
+		$this->assertStringContainsString( 'type="checkbox" id="wpinat_use_media_library" name="wpinat_use_media_library" value="1" checked="checked"', $on );
+		update_option( Config::USE_MEDIA, 0 );
+		ob_start();
+		SettingsPage::fieldUseMedia();
+		$this->assertStringNotContainsString( 'checked', ob_get_clean() );
+	}
+
+	public function test_an_unchecked_box_is_saved_as_zero_and_anything_else_as_one() {
+		$this->assertSame( 0, SettingsPage::sanitizeUseMedia( null ), 'an unchecked box is absent from the form' );
+		$this->assertSame( 0, SettingsPage::sanitizeUseMedia( '' ) );
+		$this->assertSame( 0, SettingsPage::sanitizeUseMedia( '0' ) );
+		$this->assertSame( 1, SettingsPage::sanitizeUseMedia( '1' ) );
+		$this->assertSame( 1, SettingsPage::sanitizeUseMedia( 'on' ) );
+	}
+
 	/**
 	 * @dataProvider logins
 	 * @param mixed  $input    Submitted value.

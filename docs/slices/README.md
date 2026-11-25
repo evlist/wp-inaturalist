@@ -17,5 +17,5 @@ One document per feature, written before the code. A slice is documented, then c
 | [005](005-post-refresh-and-login-check.md) | Refresh on publication and on demand from the editor (REST); check of the login on the settings page | 004 | coded; see its verification status |
 | [006](006-block.md) | Block and rendering of the species list | 004, 005 | coded; see its verification status |
 | 007 | `data-index` mark for `wp-otherguise` | 006 | to write |
-| 008 | Photos: credits, licences, match with the media library | 006, open question 1 | to write |
+| [008](008-photos-media-library.md) | Photos: match with the media library (EXIF time), manual link, report | 006, open question 1 | coded; see its verification status |
 | 009 | Translations, release zip, documentation | all | to write |

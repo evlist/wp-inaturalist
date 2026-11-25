@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Schema {
 
-	const VERSION = 1;
+	const VERSION = 2;
 
 	/**
 	 * Creates or updates the table when the stored version is older than {@see Schema::VERSION}.
@@ -60,6 +60,7 @@ final class Schema {
   wikipedia_url varchar(255) DEFAULT NULL,
   photos longtext NOT NULL,
   fetched_at datetime NOT NULL,
+  attachment_id bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY  (observation_id),
   KEY user_date (user_login,observed_on),
   KEY taxon (taxon_id)

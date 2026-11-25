@@ -58,6 +58,7 @@ final class SettingsPage {
 			Config::NAMES_LOCALE => 'sanitizeNamesLocale',
 			Config::QUALITY      => 'sanitizeQuality',
 			Config::REFRESH_HOUR => 'sanitizeRefreshHour',
+			Config::USE_MEDIA    => 'sanitizeUseMedia',
 		);
 		foreach ( $sanitize as $name => $method ) {
 			register_setting(
@@ -75,6 +76,7 @@ final class SettingsPage {
 		add_settings_field( Config::LOGIN, __( 'iNaturalist login', 'wp-inaturalist' ), array( self::class, 'fieldLogin' ), self::PAGE, self::SECTION, array( 'label_for' => Config::LOGIN ) );
 		add_settings_field( Config::NAMES_LOCALE, __( 'Language of the names', 'wp-inaturalist' ), array( self::class, 'fieldNamesLocale' ), self::PAGE, self::SECTION, array( 'label_for' => Config::NAMES_LOCALE ) );
 		add_settings_field( Config::QUALITY, __( 'Observations shown', 'wp-inaturalist' ), array( self::class, 'fieldQuality' ), self::PAGE, self::SECTION, array( 'label_for' => Config::QUALITY ) );
+		add_settings_field( Config::USE_MEDIA, __( 'Photos', 'wp-inaturalist' ), array( self::class, 'fieldUseMedia' ), self::PAGE, self::SECTION, array( 'label_for' => Config::USE_MEDIA ) );
 		add_settings_field( Config::REFRESH_HOUR, __( 'Hour of the daily refresh', 'wp-inaturalist' ), array( self::class, 'fieldRefreshHour' ), self::PAGE, self::SECTION, array( 'label_for' => Config::REFRESH_HOUR ) );
 	}
 
@@ -140,6 +142,19 @@ final class SettingsPage {
 	}
 
 	/**
+	 * Media library photos field.
+	 */
+	public static function fieldUseMedia(): void {
+		printf(
+			'<label><input type="checkbox" id="%1$s" name="%1$s" value="1"%2$s /> %3$s</label>',
+			esc_attr( Config::USE_MEDIA ),
+			Config::getUseMediaLibrary() ? ' checked="checked"' : '',
+			esc_html__( 'Use the photos of the media library when they match an observation', 'wp-inaturalist' )
+		);
+		echo '<p class="description">' . esc_html__( 'A photo matches when it was taken at the same time as the observation (within two seconds). Applied at the next refresh of a period.', 'wp-inaturalist' ) . '</p>';
+	}
+
+	/**
 	 * Refresh hour field.
 	 */
 	public static function fieldRefreshHour(): void {
@@ -191,6 +206,15 @@ final class SettingsPage {
 		}
 		add_settings_error( self::GROUP, 'wpinat_bad_quality', __( 'Unknown choice of observations.', 'wp-inaturalist' ) );
 		return Config::getQuality();
+	}
+
+	/**
+	 * Sanitizes the media library choice: a checkbox, so anything but an absent value means yes.
+	 *
+	 * @param mixed $value Submitted value (absent when the box is unchecked).
+	 */
+	public static function sanitizeUseMedia( $value ): int {
+		return empty( $value ) ? 0 : 1;
 	}
 
 	/**

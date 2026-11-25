@@ -67,6 +67,29 @@ class WPINAT_Fake_Wpdb {
 	public $rows = array();
 	/** @var bool */
 	public $fail_replace = false;
+	/** @var array */
+	public $last_update = array();
+	/** @var string */
+	public $posts = 'wp_posts';
+	/** @var string */
+	public $postmeta = 'wp_postmeta';
+	/** @var array Scripted answers of get_results() for the media queries (oldest first). */
+	public $scripted_results = array();
+	/** @var array Scripted answers of get_var() for the manual-link query. */
+	public $scripted_vars = array();
+
+	public function esc_like( $text ) {
+		return addcslashes( $text, '_%\\' );
+	}
+
+	public function update( $table, $data, $where, $format = null, $where_format = null ) {
+		$this->queries[]   = 'UPDATE ' . $table;
+		$this->last_update = array( $data, $where, $format, $where_format );
+		if ( isset( $this->rows[ $where['observation_id'] ] ) ) {
+			$this->rows[ $where['observation_id'] ] = array_merge( $this->rows[ $where['observation_id'] ], $data );
+		}
+		return 1;
+	}
 
 	/** @param string $sql Query. */
 	public function query( $sql ) {
@@ -94,6 +117,9 @@ class WPINAT_Fake_Wpdb {
 
 	public function prepare( $sql, ...$args ) {
 		$i = 0;
+		if ( 1 === count( $args ) && is_array( $args[0] ) ) {
+			$args = $args[0];
+		}
 		return preg_replace_callback(
 			'/%[sd]/',
 			function ( $m ) use ( &$i, $args ) {
@@ -106,6 +132,26 @@ class WPINAT_Fake_Wpdb {
 
 	public function get_results( $sql, $output = 'OBJECT' ) {
 		$this->queries[] = $sql;
+		if ( false !== strpos( $sql, 'FROM wp_postmeta pm' ) ) {
+			return array_shift( $this->scripted_results );
+		}
+		if ( preg_match( '/^SELECT \* FROM \S+ WHERE user_login = \'(.*?)\' ORDER BY observed_on DESC, observation_id DESC LIMIT (\d+)$/', $sql, $m ) ) {
+			$out = array_values(
+				array_filter(
+					$this->rows,
+					static function ( $r ) use ( $m ) {
+						return $r['user_login'] === $m[1];
+					}
+				)
+			);
+			usort(
+				$out,
+				static function ( $a, $b ) {
+					return array( $b['observed_on'], $b['observation_id'] ) <=> array( $a['observed_on'], $a['observation_id'] );
+				}
+			);
+			return array_slice( $out, 0, (int) $m[2] );
+		}
 		if ( ! preg_match( "/WHERE user_login = '(.*?)' AND observed_on BETWEEN '(.*?)' AND '(.*?)' ORDER BY observed_on ASC, observation_id ASC$/", $sql, $m ) ) {
 			return null;
 		}
@@ -125,6 +171,10 @@ class WPINAT_Fake_Wpdb {
 	}
 
 	public function get_var( $sql ) {
+		if ( false !== strpos( $sql, 'FROM wp_postmeta pm' ) ) {
+			$this->queries[] = $sql;
+			return array_shift( $this->scripted_vars );
+		}
 		return count( $this->rows );
 	}
 
@@ -345,6 +395,36 @@ function current_user_can( $capability, ...$args ) {
 	return $GLOBALS['wpinat_test']['can'];
 }
 
+function maybe_unserialize( $value ) {
+	return is_string( $value ) ? @unserialize( $value ) : $value; // phpcs:ignore WordPress.PHP.NoSilencedErrors
+}
+
+function get_post_meta( $id, $key, $single = false ) {
+	return isset( $GLOBALS['wpinat_test']['postmeta'][ $id ][ $key ] ) ? $GLOBALS['wpinat_test']['postmeta'][ $id ][ $key ] : '';
+}
+
+function update_post_meta( $id, $key, $value ) {
+	$GLOBALS['wpinat_test']['postmeta'][ $id ][ $key ] = $value;
+	return true;
+}
+
+function delete_post_meta( $id, $key ) {
+	unset( $GLOBALS['wpinat_test']['postmeta'][ $id ][ $key ] );
+	return true;
+}
+
+function wp_get_attachment_image( $id, $size = 'thumbnail', $icon = false, $attr = '' ) {
+	if ( ! isset( $GLOBALS['wpinat_test']['attachments'][ $id ] ) ) {
+		return '';
+	}
+	$alt = is_array( $attr ) && isset( $attr['alt'] ) ? esc_attr( $attr['alt'] ) : '';
+	return '<img src="' . esc_url( $GLOBALS['wpinat_test']['attachments'][ $id ] ) . '" alt="' . $alt . '" class="local" />';
+}
+
+function get_edit_post_link( $id ) {
+	return 'https://blog.example.test/wp-admin/post.php?post=' . $id . '&action=edit';
+}
+
 function get_post( $id = null ) {
 	if ( null === $id ) {
 		return isset( $GLOBALS['wpinat_test']['current_post'] ) ? $GLOBALS['wpinat_test']['current_post'] : null;
@@ -481,6 +561,9 @@ require_once WPINAT_DIR . 'includes/Schema.php';
 require_once WPINAT_DIR . 'includes/Cache.php';
 require_once WPINAT_DIR . 'includes/JobLog.php';
 require_once WPINAT_DIR . 'includes/Job.php';
+require_once WPINAT_DIR . 'includes/AttachmentIndex.php';
+require_once WPINAT_DIR . 'includes/MediaFields.php';
+require_once WPINAT_DIR . 'includes/PhotoLinker.php';
 require_once WPINAT_DIR . 'includes/Scheduler.php';
 require_once WPINAT_DIR . 'includes/Period.php';
 require_once WPINAT_DIR . 'includes/PostRefresh.php';

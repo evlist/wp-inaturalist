@@ -212,4 +212,73 @@ final class ToolsPageTest extends TestCase {
 		$this->assertStringNotContainsString( 'notice-', $html );
 		$this->assertStringNotContainsString( 'script', $html );
 	}
+
+	/**
+	 * The page outputs, with cached observations of the account.
+	 *
+	 * @param array $times Times of the observations by id.
+	 */
+	private function renderWithObservations( array $times ): string {
+		$list = array();
+		foreach ( $times as $id => $time ) {
+			$o                 = $this->observation( $id, '2026-11-20' );
+			$o->timeObservedAt = $time;
+			$list[]            = $o;
+		}
+		( new Cache( $GLOBALS['wpdb'] ) )->replaceRange( 'me', '2026-11-01', '2026-11-30', $list, 'fr', 1 );
+		ob_start();
+		ToolsPage::render();
+		return ob_get_clean();
+	}
+
+	public function test_the_photo_report_says_why_each_observation_is_or_is_not_linked() {
+		$GLOBALS['wpdb']->scripted_vars             = array( null, '300', null, null ); // Manual link only for the 2nd call.
+		$GLOBALS['wpdb']->scripted_results          = array(
+			array(
+				(object) array(
+					'post_id'    => 100,
+					'meta_value' => serialize( array( 'image_meta' => array( 'created_timestamp' => (string) gmmktime( 9, 0, 0, 11, 20, 2026 ) ) ) ),
+				),
+			),
+			array(),
+		);
+		$GLOBALS['wpinat_test']['attachments'][100] = 'https://blog.example.test/a.jpg';
+		$GLOBALS['wpinat_test']['attachments'][300] = 'https://blog.example.test/b.jpg';
+		// Newest first: 3 (no time), 2 (manual), 1 (auto)... the order of the answers above follows it.
+		$html = $this->renderWithObservations(
+			array(
+				1 => '2026-11-20T09:00:00+01:00',
+				2 => '2026-11-20T10:00:00+01:00',
+				3 => null,
+			)
+		);
+
+		$this->assertStringContainsString( 'Photos of the media library', $html );
+		$this->assertStringContainsString( 'No time of day in the observation', $html );
+		$this->assertStringContainsString( 'Linked by hand', $html );
+		$this->assertStringContainsString( 'of the 3 latest observations are linked', $html );
+		$this->assertStringContainsString( 'post.php?post=300&amp;action=edit', $html, 'the linked photo links to its edit screen' );
+	}
+
+	public function test_the_photo_report_says_when_the_option_is_off() {
+		update_option( Config::USE_MEDIA, 0 );
+		ob_start();
+		ToolsPage::render();
+		$html = ob_get_clean();
+		$this->assertStringContainsString( 'This option is off in the settings', $html );
+	}
+
+	public function test_the_photo_report_says_when_there_is_nothing_cached() {
+		ob_start();
+		ToolsPage::render();
+		$this->assertStringContainsString( 'No cached observation with a photo yet.', ob_get_clean() );
+	}
+
+	public function test_the_photo_report_never_calls_the_api_or_changes_anything() {
+		$GLOBALS['wpdb']->scripted_vars    = array( null );
+		$GLOBALS['wpdb']->scripted_results = array( array() );
+		$this->renderWithObservations( array( 1 => '2026-11-20T09:00:00+01:00' ) );
+		$this->assertSame( array(), $GLOBALS['wpinat_test']['scheduled'] );
+		$this->assertArrayNotHasKey( 'attachment_id', $GLOBALS['wpdb']->rows[1], 'the report does not write links' );
+	}
 }

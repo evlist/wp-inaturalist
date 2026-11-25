@@ -78,6 +78,7 @@ final class ToolsPage {
 		}
 
 		self::renderStatus( $state );
+		self::renderPhotos();
 		self::renderControls( $state );
 		self::renderLog( $log->entries() );
 		echo '</div>';
@@ -146,6 +147,50 @@ final class ToolsPage {
 			echo '</form> ';
 		}
 		echo '</p>';
+	}
+
+	/**
+	 * Report on the photos of the media library: what is linked among the latest cached observations. Read-only.
+	 */
+	private static function renderPhotos(): void {
+		global $wpdb;
+		$cache  = new Cache( $wpdb );
+		$linker = new PhotoLinker( $cache, new AttachmentIndex( $wpdb ) );
+		$rows   = Config::getLogin() ? $cache->latest( Config::getLogin(), 30 ) : array();
+		echo '<h2>' . esc_html__( 'Photos of the media library', 'wp-inaturalist' ) . '</h2>';
+		if ( ! Config::getUseMediaLibrary() ) {
+			echo '<p>' . esc_html__( 'This option is off in the settings: the photos of iNaturalist are used.', 'wp-inaturalist' ) . '</p>';
+			return;
+		}
+		$rows = array_values( array_filter( $rows, array( PhotoLinker::class, 'hasPhoto' ) ) );
+		if ( array() === $rows ) {
+			echo '<p>' . esc_html__( 'No cached observation with a photo yet.', 'wp-inaturalist' ) . '</p>';
+			return;
+		}
+		$labels = array(
+			'manual'   => __( 'Linked by hand', 'wp-inaturalist' ),
+			'auto'     => __( 'Matched by the time of the shot', 'wp-inaturalist' ),
+			'no_time'  => __( 'No time of day in the observation', 'wp-inaturalist' ),
+			'no_match' => __( 'No photo of the media library taken at that time', 'wp-inaturalist' ),
+		);
+		$body   = '';
+		$linked = 0;
+		foreach ( $rows as $row ) {
+			$choice  = $linker->choose( $row );
+			$linked += null === $choice['id'] ? 0 : 1;
+			$name    = '' !== (string) $row['common_name'] ? $row['common_name'] : $row['scientific_name'];
+			$photo   = null === $choice['id'] ? '' : wp_get_attachment_image( $choice['id'], array( 48, 48 ) );
+			$edit    = null === $choice['id'] ? '' : get_edit_post_link( $choice['id'] );
+			$body   .= sprintf(
+				'<tr><td>%1$s</td><td>%2$s</td><td>%3$s</td><td>%4$s</td></tr>',
+				esc_html( (string) ( isset( $row['time_observed_at'] ) ? $row['time_observed_at'] : $row['observed_on'] ) ),
+				esc_html( (string) $name ),
+				$edit ? '<a href="' . esc_url( $edit ) . '">' . $photo . '</a>' : $photo,
+				esc_html( $labels[ $choice['how'] ] )
+			);
+		}
+		echo '<p>' . esc_html( sprintf( /* translators: 1: number linked, 2: number of observations. */ __( '%1$d of the %2$d latest observations are linked to a photo of the media library.', 'wp-inaturalist' ), $linked, count( $rows ) ) ) . '</p>';
+		echo '<table class="widefat striped"><tbody>' . $body . '</tbody></table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- every cell is escaped above.
 	}
 
 	/**

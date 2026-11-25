@@ -35,7 +35,7 @@ final class SchemaTest extends TestCase {
 	}
 
 	public function test_an_older_version_is_migrated_without_activation() {
-		update_option( Config::SCHEMA_VERSION, Schema::VERSION - 1 );
+		update_option( Config::SCHEMA_VERSION, 1 ); // The version before the column attachment_id.
 		Schema::maybeMigrate();
 		$this->assertCount( 1, $GLOBALS['wpinat_test']['dbdelta'] );
 		$this->assertSame( Schema::VERSION, get_option( Config::SCHEMA_VERSION ) );
@@ -47,5 +47,7 @@ final class SchemaTest extends TestCase {
 		$this->assertStringContainsString( 'KEY user_date (user_login,observed_on)', $sql );
 		$this->assertDoesNotMatchRegularExpression( '/^\s+rank /m', $sql, '"rank" is reserved in MySQL 8' );
 		$this->assertStringContainsString( 'taxon_rank', $sql );
+		$this->assertStringContainsString( 'attachment_id bigint(20) unsigned DEFAULT NULL,', $sql, 'added in version 2' );
+		$this->assertGreaterThanOrEqual( 2, Schema::VERSION );
 	}
 }

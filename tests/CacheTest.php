@@ -112,4 +112,21 @@ final class CacheTest extends TestCase {
 		$this->cache()->getBetween( "x' OR '1'='1", '2026-11-01', '2026-11-30' );
 		$this->assertStringContainsString( "user_login = 'x\\' OR \\'1\\'=\\'1'", end( $GLOBALS['wpdb']->queries ) );
 	}
+
+	public function test_an_attachment_can_be_linked_and_unlinked() {
+		$c = $this->cache();
+		$c->replaceRange( 'me', '2026-11-01', '2026-11-30', array( $this->observation( 1, '2026-11-05' ) ), 'fr', 1 );
+		$c->setAttachment( 1, 77 );
+		$this->assertSame( 77, $GLOBALS['wpdb']->rows[1]['attachment_id'] );
+		$c->setAttachment( 1, null );
+		$this->assertNull( $GLOBALS['wpdb']->rows[1]['attachment_id'] );
+		$this->assertSame( array( array( 'attachment_id' => null ), array( 'observation_id' => 1 ), array( '%d' ), array( '%d' ) ), $GLOBALS['wpdb']->last_update, 'the ids are integers for $wpdb' );
+	}
+
+	public function test_latest_returns_the_newest_rows_of_the_login_first() {
+		$c = $this->cache();
+		$c->replaceRange( 'me', '2026-11-01', '2026-11-30', array( $this->observation( 1, '2026-11-05' ), $this->observation( 2, '2026-11-20' ), $this->observation( 3, '2026-11-10' ) ), 'fr', 1 );
+		$c->replaceRange( 'other', '2026-11-01', '2026-11-30', array( $this->observation( 9, '2026-11-25' ) ), 'fr', 1 );
+		$this->assertSame( array( 2, 3 ), array_map( 'intval', array_column( $c->latest( 'me', 2 ), 'observation_id' ) ) );
+	}
 }
