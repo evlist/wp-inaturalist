@@ -103,7 +103,7 @@ final class Renderer {
 
 		$photo = $group['photo'];
 		// The media library copy when one is linked and WordPress can still output it, else the iNaturalist photo.
-		$local = ( is_array( $photo ) && $group['media'] > 0 ) ? wp_get_attachment_image(
+		$local = ( is_array( $photo ) && $group['media'] > 0 && Config::getUseMediaLibrary() ) ? wp_get_attachment_image(
 			(int) $group['media'],
 			'medium',
 			false,

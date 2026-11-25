@@ -282,4 +282,12 @@ final class RendererTest extends TestCase {
 			$this->assertStringNotContainsString( 'class="local"', $html, var_export( $bad, true ) );
 		}
 	}
+
+	public function test_turning_the_option_off_stops_using_the_linked_photos_at_once() {
+		$GLOBALS['wpinat_test']['attachments'][55] = 'https://blog.example.test/wp-content/uploads/pie.jpg';
+		update_option( \Evlist\WpInaturalist\Config::USE_MEDIA, 0 );
+		$html = Renderer::html( array( $this->row( array( 'attachment_id' => 55 ) ) ) );
+		$this->assertStringNotContainsString( 'class="local"', $html );
+		$this->assertStringContainsString( 'inaturalist-open-data', $html );
+	}
 }

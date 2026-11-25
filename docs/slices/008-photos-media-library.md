@@ -74,9 +74,8 @@ Whether it holds on Eric's gallery is **unknown**; the report below is there to 
   cache rows: the link survives refreshes and is re-applied to the cache at each one.
 - `PhotoLinker::wallClock()` rejects impossible dates (month 13, second 61) that PHP would otherwise roll over; found by a test.
 - The photo shown for a species is the first observation with a linked media library copy, else the first iNaturalist photo.
-- The setting is applied at the next refresh of a period, not retroactively: turning it off does not unlink the cache rows already
-  linked (the renderer does not look at the setting); refresh the period to apply it. *(Open point: should the renderer also
-  check the setting? Left as is until Eric decides.)*
+- Turning the setting **off** applies at once (the renderer checks it); turning it **on** applies at the next refresh of a period,
+  because links are made by the refresh job.
 
 ## Verification status
 
