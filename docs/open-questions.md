@@ -39,6 +39,9 @@ not shown anyway.
 Provisional choices made in slice 004 (see its document): quality follows the setting, observations without photo are kept,
 one entry per observation is stored (grouping is for the renderer).
 
+Slice 005 refreshes the period of a post, computed as in wp-whobird (N units ending on the post date), and a job running at
+that moment queues the request (at most 20) instead of dropping it.
+
 ## 3. Language of the names
 
 Use the site locale for `preferred_common_name`, with a fallback to the Latin name. Is a per-block override wanted?

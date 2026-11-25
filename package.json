@@ -1,0 +1,12 @@
+{
+  "name": "wp-inaturalist",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "description": "Development dependencies only (tests of the admin scripts). The plugin has no build step.",
+  "scripts": {
+    "test": "node --test tests/js/*.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.0"
+  }
+}

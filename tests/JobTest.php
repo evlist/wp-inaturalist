@@ -398,4 +398,71 @@ final class JobTest extends TestCase {
 		$this->assertSame( array(), $this->calls );
 		$this->assertSame( Job::FAILED, $this->job()->state()['status'] );
 	}
+
+	public function test_a_request_when_idle_starts_at_once() {
+		$this->assertSame( 'started', $this->job()->request( '2026-11-01', '2026-11-05', 'post' ) );
+		$this->assertSame( array(), $this->job()->queue() );
+	}
+
+	public function test_a_request_while_running_is_queued_and_started_when_the_job_ends() {
+		$this->job()->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->assertSame( 'queued', $this->job()->request( '2026-10-01', '2026-10-03', 'post' ) );
+		$this->assertSame( array( array( '2026-10-01', '2026-10-03', 'post' ) ), $this->job()->queue() );
+		$this->assertFalse( $GLOBALS['wpinat_test']['autoload'][ Config::JOB_QUEUE ] );
+
+		$this->script                        = array( array( $this->observation( 1, '2026-11-02' ) ), array( $this->observation( 2, '2026-10-02' ) ) );
+		$GLOBALS['wpinat_test']['scheduled'] = array();
+		$this->job()->step();
+
+		$state = $this->job()->state();
+		$this->assertSame( Job::RUNNING, $state['status'], 'the queued range has started' );
+		$this->assertSame( 'post', $state['trigger'] );
+		$this->assertSame( array( array( '2026-10-01', '2026-10-03' ) ), $state['ranges'] );
+		$this->assertSame( array(), $this->job()->queue() );
+		$this->assertCount( 1, $this->scheduledSteps(), 'a step is scheduled for it' );
+
+		$this->job()->step();
+		$this->assertSame( Job::DONE, $this->job()->state()['status'] );
+		$this->assertSame( array( 1, 2 ), array_keys( $GLOBALS['wpdb']->rows ) );
+	}
+
+	public function test_the_same_range_is_not_queued_twice() {
+		$this->job()->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->job()->request( '2026-10-01', '2026-10-03', 'post' );
+		$this->job()->request( '2026-10-01', '2026-10-03', 'cron' );
+		$this->assertCount( 1, $this->job()->queue() );
+	}
+
+	public function test_the_queue_is_bounded() {
+		$this->job()->start( '2026-11-01', '2026-11-05', 'manual' );
+		for ( $i = 1; $i <= Config::MAX_QUEUE + 3; $i++ ) {
+			$this->job()->request( sprintf( '2025-01-%02d', $i ), sprintf( '2025-01-%02d', $i ), 'post' );
+		}
+		$this->assertCount( Config::MAX_QUEUE, $this->job()->queue() );
+		$this->assertStringContainsString( 'queue of refreshes is full', implode( "\n", $this->logMessages() ) );
+	}
+
+	public function test_a_queued_request_is_checked_like_a_started_one() {
+		$this->job()->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->assertSame( 'bad_range', $this->job()->request( '2026-11-05', '2026-11-01', 'post' ) );
+		update_option( Config::LOGIN, '' );
+		$this->assertSame( 'no_login', $this->job()->request( '2026-10-01', '2026-10-03', 'post' ) );
+		$this->assertSame( array(), $this->job()->queue() );
+	}
+
+	public function test_a_failed_job_keeps_its_queue_and_a_new_request_starts_at_once() {
+		$this->job()->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->job()->request( '2026-10-01', '2026-10-03', 'post' );
+		$this->script = array( new INatException( INatException::HTTP, 'no' ) );
+		$this->job()->step();
+		$this->assertSame( Job::FAILED, $this->job()->state()['status'] );
+		$this->assertCount( 1, $this->job()->queue(), 'nothing is lost' );
+		$this->assertSame( 'started', $this->job()->request( '2026-09-01', '2026-09-02', 'post' ) );
+	}
+
+	public function test_the_daily_refresh_is_queued_behind_a_running_job() {
+		$this->job()->start( '2026-01-01', '2026-02-05', 'manual' );
+		$this->job()->startRolling();
+		$this->assertSame( 'cron', $this->job()->queue()[0][2] );
+	}
 }

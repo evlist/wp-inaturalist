@@ -33,6 +33,10 @@ final class Setup {
 		add_action( 'update_option_' . Config::REFRESH_HOUR, array( Scheduler::class, 'reschedule' ), 10 );
 		add_action( Config::CRON_HOOK, array( Scheduler::class, 'runDaily' ), 10 );
 		add_action( Config::STEP_HOOK, array( Scheduler::class, 'runStep' ), 10 );
+		add_action( 'transition_post_status', array( PostRefresh::class, 'onTransition' ), 10, 3 );
+		add_action( 'rest_api_init', array( Rest::class, 'register' ), 10 );
+		add_action( 'admin_enqueue_scripts', array( Assets::class, 'enqueueSettings' ), 10 );
+		add_action( 'enqueue_block_editor_assets', array( Assets::class, 'enqueueEditor' ), 10 );
 		add_action( 'admin_menu', array( ToolsPage::class, 'addMenu' ), 10 );
 		add_action( 'admin_post_' . ToolsPage::ACTION_START, array( ToolsPage::class, 'onStart' ), 10 );
 		add_action( 'admin_post_' . ToolsPage::ACTION_STOP, array( ToolsPage::class, 'onStop' ), 10 );

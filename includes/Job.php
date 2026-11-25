@@ -118,6 +118,16 @@ final class Job {
 	}
 
 	/**
+	 * Adds a message to the log of the job.
+	 *
+	 * @param string $level   "info", "warning" or "error".
+	 * @param string $message Plain English text.
+	 */
+	public function log( string $level, string $message ): void {
+		$this->log->add( $level, $message );
+	}
+
+	/**
 	 * The state of the job, with defaults.
 	 *
 	 * @return array<string,mixed>
@@ -194,12 +204,75 @@ final class Job {
 	}
 
 	/**
+	 * Starts a job over a date range, or queues the range when a job is running.
+	 *
+	 * Used by callers that must not lose a request (daily refresh, publication of a post, editor button). A queued range is
+	 * started when the running job ends.
+	 *
+	 * @param string $from    First day (Y-m-d).
+	 * @param string $to      Last day (Y-m-d).
+	 * @param string $trigger "cron", "post" or "manual".
+	 * @return string "started", "queued", "no_login" or "bad_range".
+	 */
+	public function request( string $from, string $to, string $trigger ): string {
+		if ( self::RUNNING !== $this->state()['status'] ) {
+			return $this->start( $from, $to, $trigger );
+		}
+		if ( '' === Config::getLogin() ) {
+			$this->log->add( 'warning', 'No iNaturalist login is configured: nothing to refresh.' );
+			return 'no_login';
+		}
+		try {
+			self::chunks( $from, $to );
+		} catch ( \InvalidArgumentException $e ) {
+			return 'bad_range';
+		}
+		$queue = $this->queue();
+		foreach ( $queue as $waiting ) {
+			if ( $waiting[0] === $from && $waiting[1] === $to ) {
+				return 'queued'; // The same range is already waiting.
+			}
+		}
+		if ( count( $queue ) >= Config::MAX_QUEUE ) {
+			$this->log->add( 'warning', 'The queue of refreshes is full: the request for ' . $from . ' to ' . $to . ' was dropped.' );
+			return 'queued';
+		}
+		$queue[] = array( $from, $to, $trigger );
+		update_option( Config::JOB_QUEUE, $queue, false );
+		$this->log->add( 'info', sprintf( 'A refresh is running: %s to %s (%s) is queued.', $from, $to, $trigger ) );
+		return 'queued';
+	}
+
+	/**
+	 * Ranges waiting for the running job to end.
+	 *
+	 * @return array<int,array{0:string,1:string,2:string}>
+	 */
+	public function queue(): array {
+		$queue = get_option( Config::JOB_QUEUE, array() );
+		return is_array( $queue ) ? array_values( $queue ) : array();
+	}
+
+	/**
+	 * Starts the next queued range, if any, once the job is done.
+	 */
+	private function startQueued(): void {
+		$queue = $this->queue();
+		if ( array() === $queue ) {
+			return;
+		}
+		$next = array_shift( $queue );
+		update_option( Config::JOB_QUEUE, $queue, false );
+		$this->start( $next[0], $next[1], $next[2] );
+	}
+
+	/**
 	 * Starts the daily refresh: the last days up to today in the time of the site.
 	 */
 	public function startRolling(): string {
 		$today = ( new \DateTimeImmutable( '@' . (int) call_user_func( $this->now ) ) )->setTimezone( wp_timezone() );
 		$from  = $today->modify( '-' . ( Config::DAILY_WINDOW_DAYS - 1 ) . ' days' );
-		return $this->start( $from->format( 'Y-m-d' ), $today->format( 'Y-m-d' ), 'cron' );
+		return $this->request( $from->format( 'Y-m-d' ), $today->format( 'Y-m-d' ), 'cron' );
 	}
 
 	/**
@@ -345,6 +418,7 @@ final class Job {
 		$state['status'] = self::DONE;
 		$this->save( $state );
 		$this->log->add( 'info', sprintf( 'Refresh done: %d observation(s) fetched, %d in the cache.', $state['fetched'], $this->cache->count() ) );
+		$this->startQueued();
 	}
 
 	/**

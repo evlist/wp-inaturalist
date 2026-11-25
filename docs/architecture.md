@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Architecture
 
-**Slices 001 to 004 are coded (foundation, API client, settings page, cache and refresh job); the block, the editor refresh and the index mark are planned.** It changes as slices are written; wishes and undecided points are
+**Slices 001 to 005 are coded (foundation, API client, settings page, cache and refresh job, refresh of a post, login check); the block and the index mark are planned.** It changes as slices are written; wishes and undecided points are
 in [`open-questions.md`](open-questions.md).
 
 ## Flow
@@ -50,14 +50,17 @@ iNaturalist API, `GET https://api.inaturalist.org/v2/observations`. Checked agai
 | --- | --- |
 | Block `wpinat/wp-inaturalist` (render, editor) | everybody (render, cache only), editors |
 | WP-Cron events `wpinat_refresh` (daily, starts the job over the last 14 days) and `wpinat_refresh_step` (single events, run the job by chunks) | WordPress |
-| REST route "refresh this post's period" | `edit_post` for that post + REST nonce |
+| REST `POST /wpinat/v1/refresh` (`post_id`; the server computes the period from the saved post) | `edit_post` for that post + REST nonce |
+| REST `POST /wpinat/v1/verify-login` (`login`) | `manage_options` + REST nonce |
+| Hook `transition_post_status` (refresh of a post that becomes published and has the block) | WordPress |
+| Editor panel `js/editor.js` and settings button `js/settings.js` | editors / `manage_options` |
 | Settings page (Settings > iNaturalist), saved through `options.php` | `manage_options` (page and option group) + nonce of the option group |
 | Tools > iNaturalist (status, log) and `admin-post.php` actions `wpinat_job_start`, `wpinat_job_stop`, `wpinat_job_resume`, `wpinat_cache_clear` | `manage_options` + one nonce per action |
 | Activation, schema migration, uninstall | WordPress |
 
 ## Stored data (planned)
 
-- Options (names, defaults, getters in `Config`): login, names language, quality, refresh hour; `wpinat_schema_version`, `wpinat_job_state`, `wpinat_job_log` (not autoloaded), `wpinat_job_lock`.
+- Options (names, defaults, getters in `Config`): login, names language, quality, refresh hour; `wpinat_schema_version`, `wpinat_job_state`, `wpinat_job_log` (not autoloaded), `wpinat_job_lock`, `wpinat_job_queue` (ranges waiting for the running job, not autoloaded).
 - Table `{prefix}wpinat_observations` (`includes/Schema.php`, migrated from the schema version on `plugins_loaded`): one row per observation (id, login, taxon and names, dates, quality, photos as JSON, fetch time).
 - Transient `wpinat_last_request` (throttle).
 - Everything is removed by `uninstall.php`.

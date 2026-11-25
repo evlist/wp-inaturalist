@@ -45,6 +45,7 @@ final class ToolsPage {
 	public static function notices(): array {
 		return array(
 			'started'       => array( 'success', __( 'The refresh was started.', 'wp-inaturalist' ) ),
+			'queued'        => array( 'success', __( 'A refresh is running: this one will start when it ends.', 'wp-inaturalist' ) ),
 			'busy'          => array( 'warning', __( 'A refresh is already running.', 'wp-inaturalist' ) ),
 			'no_login'      => array( 'error', __( 'Set the iNaturalist login in the settings first.', 'wp-inaturalist' ) ),
 			'bad_range'     => array( 'error', __( 'The dates are not valid: use real days, the first not after the last, at most about ten years apart.', 'wp-inaturalist' ) ),

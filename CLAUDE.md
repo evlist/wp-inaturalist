@@ -30,7 +30,7 @@ stored in a local cache; page views never call the API. The map of the code is i
   a decision go in [`docs/open-questions.md`](docs/open-questions.md); nothing in the code may depend on an assumed answer.
 - **No build step**: block files are loaded as they are (plain JavaScript and CSS, no JSX, no bundler). Do not introduce one without a slice.
 - **Tests**: PHPUnit for PHP (WordPress functions stubbed in `tests/bootstrap.php`, the API stubbed with recorded responses),
-  jsdom or `node --test` for scripts, `phpcs` (WordPress standard) for style, **from the first commit**. Every entry point
+  jsdom or `node --test` for scripts (`npm install`, then `npm test`; `node_modules` is not committed), `phpcs` (WordPress standard) for style, **from the first commit**. Every entry point
   (block, REST route, cron job, admin screen, uninstall) has a test; check that a new test fails without the change it covers.
 - **Set-up**: `composer install`, then `vendor/bin/phpunit` and `vendor/bin/phpcs`. If Composer plugins are disabled (as in cloud
   sessions), phpcs does not find the WordPress standard: run `vendor/bin/phpcs --config-set installed_paths` with the paths of

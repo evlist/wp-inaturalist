@@ -69,6 +69,7 @@ final class ConfigTest extends TestCase {
 		$this->assertContains( Config::JOB_STATE, $names );
 		$this->assertContains( Config::JOB_LOG, $names );
 		$this->assertContains( Config::JOB_LOCK, $names );
+		$this->assertContains( Config::JOB_QUEUE, $names );
 	}
 
 	public function test_table_name_uses_the_site_prefix() {

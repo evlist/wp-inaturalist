@@ -33,6 +33,8 @@ final class INatClient {
 	 */
 	const FIELDS = '(id:!t,uuid:!t,uri:!t,observed_on:!t,time_observed_at:!t,observed_time_zone:!t,quality_grade:!t,geoprivacy:!t,obscured:!t,taxon:(id:!t,name:!t,rank:!t,preferred_common_name:!t,wikipedia_url:!t,iconic_taxon_name:!t),photos:(id:!t,url:!t,attribution:!t,license_code:!t))';
 
+	const USERS = 'https://api.inaturalist.org/v1/users/';
+
 	const PER_PAGE_MAX = 200;
 
 	/**
@@ -116,15 +118,64 @@ final class INatClient {
 	}
 
 	/**
-	 * One request, checked and decoded.
+	 * The public profile of a user, or null when no such user exists.
+	 *
+	 * @param string $login iNaturalist login.
+	 * @return array{id:int,login:string,created_at:?string}|null
+	 * @throws INatException On any failure other than "no such user".
+	 * @throws \InvalidArgumentException When the login is not valid.
+	 */
+	public function fetchUser( string $login ): ?array {
+		if ( ! Config::isValidLogin( $login ) ) {
+			throw new \InvalidArgumentException( 'Invalid iNaturalist login.' );
+		}
+		list( $code, $body ) = $this->get( self::USERS . rawurlencode( $login ) );
+		if ( 404 === $code ) {
+			return null;
+		}
+		if ( 200 !== $code ) {
+			throw new INatException( INatException::HTTP, 'Unexpected answer ' . $code . '.' );
+		}
+		$data = json_decode( $body, true );
+		$user = ( is_array( $data ) && isset( $data['results'][0] ) && is_array( $data['results'][0] ) ) ? $data['results'][0] : null;
+		if ( null === $user || ! isset( $user['id'], $user['login'] ) || ! is_int( $user['id'] ) || ! is_string( $user['login'] ) ) {
+			throw new INatException( INatException::MALFORMED, 'The answer is not a user.' );
+		}
+		return array(
+			'id'         => $user['id'],
+			'login'      => $user['login'],
+			'created_at' => ( isset( $user['created_at'] ) && is_string( $user['created_at'] ) ) ? $user['created_at'] : null,
+		);
+	}
+
+	/**
+	 * One request for a list of observations, checked and decoded.
 	 *
 	 * @param array $params Query parameters.
 	 * @return array{total_results:int,results:array}
 	 * @throws INatException On any failure.
 	 */
 	private function request( array $params ): array {
+		list( $code, $body ) = $this->get( self::ENDPOINT . '?' . http_build_query( $params, '', '&', PHP_QUERY_RFC3986 ) );
+		if ( 200 !== $code ) {
+			throw new INatException( INatException::HTTP, 'Unexpected answer ' . $code . '.' );
+		}
+		$data = json_decode( $body, true );
+		if ( ! is_array( $data ) || ! isset( $data['results'], $data['total_results'] ) || ! is_array( $data['results'] ) || ! is_int( $data['total_results'] ) ) {
+			throw new INatException( INatException::MALFORMED, 'The answer is not a list of observations.' );
+		}
+		return $data;
+	}
+
+	/**
+	 * One throttled GET. Transport errors, 429 and 5xx are raised; any other status is returned to the caller.
+	 *
+	 * @param string $url Full URL.
+	 * @return array{0:int,1:string} Status code and body.
+	 * @throws INatException On a transport error, 429 or 5xx.
+	 */
+	private function get( string $url ): array {
 		$this->throttle->wait();
-		$url      = self::ENDPOINT . '?' . http_build_query( $params, '', '&', PHP_QUERY_RFC3986 );
 		$response = call_user_func(
 			$this->http,
 			$url,
@@ -145,13 +196,6 @@ final class INatClient {
 		if ( $code >= 500 ) {
 			throw new INatException( INatException::SERVER, 'Server error ' . $code . '.' );
 		}
-		if ( 200 !== $code ) {
-			throw new INatException( INatException::HTTP, 'Unexpected answer ' . $code . '.' );
-		}
-		$data = json_decode( (string) wp_remote_retrieve_body( $response ), true );
-		if ( ! is_array( $data ) || ! isset( $data['results'], $data['total_results'] ) || ! is_array( $data['results'] ) || ! is_int( $data['total_results'] ) ) {
-			throw new INatException( INatException::MALFORMED, 'The answer is not a list of observations.' );
-		}
-		return $data;
+		return array( $code, (string) wp_remote_retrieve_body( $response ) );
 	}
 }

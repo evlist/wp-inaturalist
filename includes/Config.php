@@ -29,6 +29,11 @@ final class Config {
 	const JOB_STATE      = 'wpinat_job_state';
 	const JOB_LOG        = 'wpinat_job_log';
 	const JOB_LOCK       = 'wpinat_job_lock';
+	const JOB_QUEUE      = 'wpinat_job_queue';
+
+	const BLOCK_NAME = 'wpinat/wp-inaturalist';
+	const REST_NS    = 'wpinat/v1';
+	const MAX_QUEUE  = 20;
 
 	const CRON_HOOK = 'wpinat_refresh';
 	const STEP_HOOK = 'wpinat_refresh_step';
@@ -65,7 +70,7 @@ final class Config {
 	public static function allOptionNames(): array {
 		return array_merge(
 			array_keys( self::settings() ),
-			array( self::SCHEMA_VERSION, self::JOB_STATE, self::JOB_LOG, self::JOB_LOCK )
+			array( self::SCHEMA_VERSION, self::JOB_STATE, self::JOB_LOG, self::JOB_LOCK, self::JOB_QUEUE )
 		);
 	}
 

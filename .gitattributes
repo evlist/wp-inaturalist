@@ -17,3 +17,7 @@
 /composer.lock.license export-ignore
 /phpcs.xml.dist export-ignore
 /phpunit.xml.dist export-ignore
+/package.json export-ignore
+/package.json.license export-ignore
+/package-lock.json export-ignore
+/package-lock.json.license export-ignore

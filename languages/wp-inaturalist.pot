@@ -11,7 +11,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-25T14:40:54+00:00\n"
+"POT-Creation-Date: 2026-11-25T14:53:31+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-inaturalist\n"
@@ -31,12 +31,73 @@ msgstr ""
 msgid "Eric van der Vlist"
 msgstr ""
 
+#: includes/Assets.php:53
+msgid "Checking…"
+msgstr ""
+
+#. translators: %s: iNaturalist login.
+#: includes/Assets.php:55
+#, php-format
+msgid "Account found: %s"
+msgstr ""
+
+#: includes/Assets.php:56
+msgid "No iNaturalist account has this login."
+msgstr ""
+
+#: includes/Assets.php:57
+msgid "This is not a valid login: use letters, digits, \"-\" and \"_\"."
+msgstr ""
+
+#: includes/Assets.php:58
+msgid "iNaturalist did not answer: try again later."
+msgstr ""
+
+#: includes/Assets.php:59
+msgid "The check could not be done."
+msgstr ""
+
+#: includes/Assets.php:70
 #: includes/SettingsPage.php:36
 #: includes/SettingsPage.php:37
 #: includes/SettingsPage.php:88
 #: includes/ToolsPage.php:37
-#: includes/ToolsPage.php:70
+#: includes/ToolsPage.php:71
 msgid "iNaturalist"
+msgstr ""
+
+#: includes/Assets.php:71
+msgid "Refresh observations"
+msgstr ""
+
+#: includes/Assets.php:72
+msgid "Saving the post first…"
+msgstr ""
+
+#: includes/Assets.php:73
+msgid "The refresh of the observations of this post has started."
+msgstr ""
+
+#: includes/Assets.php:74
+#: includes/ToolsPage.php:48
+msgid "A refresh is running: this one will start when it ends."
+msgstr ""
+
+#: includes/Assets.php:75
+msgid "This post has no iNaturalist block yet: add one and save the post."
+msgstr ""
+
+#: includes/Assets.php:76
+#: includes/ToolsPage.php:50
+msgid "Set the iNaturalist login in the settings first."
+msgstr ""
+
+#: includes/Assets.php:77
+msgid "The date of this post cannot be used."
+msgstr ""
+
+#: includes/Assets.php:78
+msgid "The refresh could not be requested."
 msgstr ""
 
 #: includes/SettingsPage.php:74
@@ -63,39 +124,43 @@ msgstr ""
 msgid "You do not have permission to change these settings."
 msgstr ""
 
-#: includes/SettingsPage.php:105
+#: includes/SettingsPage.php:108
+msgid "Check"
+msgstr ""
+
+#: includes/SettingsPage.php:110
 msgid "Only public observations of this user are read. No password or token is needed or stored."
 msgstr ""
 
-#: includes/SettingsPage.php:118
+#: includes/SettingsPage.php:123
 msgid "Language code of the common names, for example \"fr\". Leave empty to use the language of the site."
 msgstr ""
 
-#: includes/SettingsPage.php:127
+#: includes/SettingsPage.php:132
 msgid "Research grade only"
 msgstr ""
 
-#: includes/SettingsPage.php:128
+#: includes/SettingsPage.php:133
 msgid "All observations"
 msgstr ""
 
-#: includes/SettingsPage.php:146
+#: includes/SettingsPage.php:151
 msgid "From 0 to 23, in the time of the site."
 msgstr ""
 
-#: includes/SettingsPage.php:159
+#: includes/SettingsPage.php:164
 msgid "The iNaturalist login may only contain letters, digits, \"-\" and \"_\"."
 msgstr ""
 
-#: includes/SettingsPage.php:173
+#: includes/SettingsPage.php:178
 msgid "The language must be a code of two or three letters, such as \"fr\", or empty."
 msgstr ""
 
-#: includes/SettingsPage.php:187
+#: includes/SettingsPage.php:192
 msgid "Unknown choice of observations."
 msgstr ""
 
-#: includes/SettingsPage.php:200
+#: includes/SettingsPage.php:205
 msgid "The hour must be a whole number from 0 to 23."
 msgstr ""
 
@@ -103,114 +168,110 @@ msgstr ""
 msgid "The refresh was started."
 msgstr ""
 
-#: includes/ToolsPage.php:48
+#: includes/ToolsPage.php:49
 msgid "A refresh is already running."
 msgstr ""
 
-#: includes/ToolsPage.php:49
-msgid "Set the iNaturalist login in the settings first."
-msgstr ""
-
-#: includes/ToolsPage.php:50
+#: includes/ToolsPage.php:51
 msgid "The dates are not valid: use real days, the first not after the last, at most about ten years apart."
 msgstr ""
 
-#: includes/ToolsPage.php:51
+#: includes/ToolsPage.php:52
 msgid "The refresh was stopped."
 msgstr ""
 
-#: includes/ToolsPage.php:52
+#: includes/ToolsPage.php:53
 msgid "No refresh is running."
 msgstr ""
 
-#: includes/ToolsPage.php:53
+#: includes/ToolsPage.php:54
 msgid "The refresh was resumed."
 msgstr ""
 
-#: includes/ToolsPage.php:54
+#: includes/ToolsPage.php:55
 msgid "There is no stopped or failed refresh to resume."
 msgstr ""
 
-#: includes/ToolsPage.php:55
+#: includes/ToolsPage.php:56
 msgid "The cache was emptied."
 msgstr ""
 
-#: includes/ToolsPage.php:64
+#: includes/ToolsPage.php:65
 msgid "You do not have permission to use this page."
 msgstr ""
 
-#: includes/ToolsPage.php:94
+#: includes/ToolsPage.php:95
 msgid "Status"
 msgstr ""
 
-#: includes/ToolsPage.php:95
+#: includes/ToolsPage.php:96
 msgid "Progress"
 msgstr ""
 
-#: includes/ToolsPage.php:96
+#: includes/ToolsPage.php:97
 msgid "Observations fetched"
 msgstr ""
 
-#: includes/ToolsPage.php:97
+#: includes/ToolsPage.php:98
 msgid "Observations in the cache"
 msgstr ""
 
-#: includes/ToolsPage.php:98
+#: includes/ToolsPage.php:99
 msgid "Started by"
 msgstr ""
 
-#: includes/ToolsPage.php:99
+#: includes/ToolsPage.php:100
 msgid "Last change"
 msgstr ""
 
-#: includes/ToolsPage.php:100
+#: includes/ToolsPage.php:101
 msgid "Next daily refresh"
 msgstr ""
 
-#: includes/ToolsPage.php:101
+#: includes/ToolsPage.php:102
 msgid "Last error"
 msgstr ""
 
-#: includes/ToolsPage.php:103
+#: includes/ToolsPage.php:104
 msgid "Refresh"
 msgstr ""
 
-#: includes/ToolsPage.php:119
+#: includes/ToolsPage.php:120
 msgid "Actions"
 msgstr ""
 
-#: includes/ToolsPage.php:126
+#: includes/ToolsPage.php:127
 msgid "From"
 msgstr ""
 
-#: includes/ToolsPage.php:128
+#: includes/ToolsPage.php:129
 msgid "to"
 msgstr ""
 
-#: includes/ToolsPage.php:131
+#: includes/ToolsPage.php:132
 msgid "Refresh these days"
 msgstr ""
 
-#: includes/ToolsPage.php:135
+#: includes/ToolsPage.php:136
 msgid "Stop"
 msgstr ""
 
-#: includes/ToolsPage.php:136
+#: includes/ToolsPage.php:137
 msgid "Resume"
 msgstr ""
 
-#: includes/ToolsPage.php:137
+#: includes/ToolsPage.php:138
 msgid "Empty the cache"
 msgstr ""
 
-#: includes/ToolsPage.php:156
+#: includes/ToolsPage.php:157
 msgid "Log"
 msgstr ""
 
-#: includes/ToolsPage.php:158
+#: includes/ToolsPage.php:159
 msgid "Nothing yet."
 msgstr ""
 
-#: includes/ToolsPage.php:180
+#: includes/ToolsPage.php:181
 msgid "You do not have permission to do this."
 msgstr ""

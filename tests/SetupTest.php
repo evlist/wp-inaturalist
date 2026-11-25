@@ -10,6 +10,9 @@
 
 namespace Evlist\WpInaturalist\Tests;
 
+use Evlist\WpInaturalist\Assets;
+use Evlist\WpInaturalist\PostRefresh;
+use Evlist\WpInaturalist\Rest;
 use Evlist\WpInaturalist\Schema;
 use Evlist\WpInaturalist\Scheduler;
 use Evlist\WpInaturalist\SettingsPage;
@@ -37,6 +40,10 @@ final class SetupTest extends TestCase {
 				'update_option_wpinat_refresh_hour -> ' . Scheduler::class . '::reschedule' => 10,
 				'wpinat_refresh -> ' . Scheduler::class . '::runDaily'              => 10,
 				'wpinat_refresh_step -> ' . Scheduler::class . '::runStep'          => 10,
+				'transition_post_status -> ' . PostRefresh::class . '::onTransition' => 10,
+				'rest_api_init -> ' . Rest::class . '::register'                    => 10,
+				'admin_enqueue_scripts -> ' . Assets::class . '::enqueueSettings'   => 10,
+				'enqueue_block_editor_assets -> ' . Assets::class . '::enqueueEditor' => 10,
 				'admin_menu -> ' . ToolsPage::class . '::addMenu'                   => 10,
 				'admin_post_wpinat_job_start -> ' . ToolsPage::class . '::onStart'  => 10,
 				'admin_post_wpinat_job_stop -> ' . ToolsPage::class . '::onStop'    => 10,

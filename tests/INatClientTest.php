@@ -246,6 +246,66 @@ final class INatClientTest extends TestCase {
 		}
 	}
 
+	private function userAnswer( int $code, string $body ): array {
+		return array(
+			'response' => array( 'code' => $code ),
+			'body'     => $body,
+		);
+	}
+
+	public function test_a_known_user_is_returned_with_the_exact_login() {
+		$client = $this->client( array( $this->userAnswer( 200, '{"total_results":1,"results":[{"id":2014634,"login":"zonata","created_at":"2019-07-19T00:36:12+00:00","spam":false}]}' ) ) );
+		$this->assertSame(
+			array(
+				'id'         => 2014634,
+				'login'      => 'zonata',
+				'created_at' => '2019-07-19T00:36:12+00:00',
+			),
+			$client->fetchUser( 'zonata' )
+		);
+		$this->assertSame( 'https://api.inaturalist.org/v1/users/zonata', $this->requests[0][0] );
+	}
+
+	public function test_an_unknown_user_is_null_not_an_error() {
+		$client = $this->client( array( $this->userAnswer( 404, '{"error":"User does not exist","status":404}' ) ) );
+		$this->assertNull( $client->fetchUser( 'zz_no_such_user_zz' ) );
+	}
+
+	public function test_user_errors_are_typed_like_the_others() {
+		foreach ( array(
+			429 => INatException::RATE_LIMITED,
+			503 => INatException::SERVER,
+			403 => INatException::HTTP,
+		) as $code => $kind ) {
+			try {
+				$this->client( array( $this->userAnswer( $code, '' ) ) )->fetchUser( 'me' );
+				$this->fail( 'expected an exception for ' . $code );
+			} catch ( INatException $e ) {
+				$this->assertSame( $kind, $e->kind, (string) $code );
+			}
+		}
+		foreach ( array( '<html>', '{"results":[]}', '{"results":[{"id":"x","login":"a"}]}' ) as $body ) {
+			try {
+				$this->client( array( $this->userAnswer( 200, $body ) ) )->fetchUser( 'me' );
+				$this->fail( 'expected MALFORMED for ' . $body );
+			} catch ( INatException $e ) {
+				$this->assertSame( INatException::MALFORMED, $e->kind, $body );
+			}
+		}
+	}
+
+	public function test_the_login_cannot_change_the_path_of_the_user_request() {
+		$client = $this->client( array() );
+		foreach ( array( '../observations', 'a/b', 'a?b=1', '' ) as $login ) {
+			try {
+				$client->fetchUser( $login );
+				$this->fail( 'expected an exception for ' . $login );
+			} catch ( \InvalidArgumentException $e ) {
+				$this->assertSame( array(), $this->requests );
+			}
+		}
+	}
+
 	private function failure( INatClient $client ): INatException {
 		try {
 			$this->fetch( $client );

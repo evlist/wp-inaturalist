@@ -102,6 +102,11 @@ final class SettingsPage {
 			esc_attr( Config::LOGIN ),
 			esc_attr( Config::getLogin() )
 		);
+		// The button is hidden until js/settings.js runs: without JavaScript it would do nothing.
+		printf(
+			' <button type="button" class="button" id="wpinat-verify" hidden>%s</button> <span id="wpinat-verify-result" role="status" aria-live="polite"></span>',
+			esc_html__( 'Check', 'wp-inaturalist' )
+		);
 		echo '<p class="description">' . esc_html__( 'Only public observations of this user are read. No password or token is needed or stored.', 'wp-inaturalist' ) . '</p>';
 	}
 

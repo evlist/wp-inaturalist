@@ -15,18 +15,39 @@ define( 'WPINAT_VERSION', 'test' );
 define( 'WPINAT_FILE', dirname( __DIR__ ) . '/wp-inaturalist.php' );
 define( 'WPINAT_DIR', dirname( __DIR__ ) . '/' );
 
+/** Minimal WP_REST_Request. */
+class WP_REST_Request {
+	/** @var array */
+	private $params;
+
+	/** @param array $params Parameters. */
+	public function __construct( $params = array() ) {
+		$this->params = $params;
+	}
+
+	/** @param string $name Name. */
+	public function get_param( $name ) {
+		return isset( $this->params[ $name ] ) ? $this->params[ $name ] : null;
+	}
+}
+
 /** Minimal WP_Error. */
 class WP_Error {
- // phpcs:ignore Generic.Files.OneObjectStructurePerFile
 	/** @var string */
 	private $message;
+	/** @var string */
+	public $code;
+	/** @var mixed */
+	public $data;
 
 	/**
 	 * @param string $code    Error code.
 	 * @param string $message Message.
 	 */
-	public function __construct( $code = '', $message = '' ) {
+	public function __construct( $code = '', $message = '', $data = null ) {
 		$this->message = $message;
+		$this->code    = $code;
+		$this->data    = $data;
 	}
 
 	/** Message. */
@@ -37,7 +58,6 @@ class WP_Error {
 
 /** In-memory stand-in for $wpdb: records queries and keeps the rows written by replace(). */
 class WPINAT_Fake_Wpdb {
- // phpcs:ignore Generic.Files.OneObjectStructurePerFile
 	/** @var string */
 	public $prefix = 'wp_';
 	/** @var string[] */
@@ -113,6 +133,12 @@ function wpinat_test_reset() {
 		'nonces'     => array(),
 		'nonce_ok'   => true,
 		'autoload'   => array(),
+		'posts'      => array(),
+		'routes'     => array(),
+		'scripts'    => array(),
+		'inline'     => array(),
+		'blocks'     => null,
+		'cap_ids'    => array(),
 		'cleared'    => array(),
 		'textdomain' => array(),
 		'locale'     => 'en_US',
@@ -209,7 +235,7 @@ function wp_timezone() {
 }
 
 function wp_date( $format, $timestamp = null ) {
-	return gmdate( $format, (int) $timestamp );
+	return gmdate( $format, null === $timestamp ? time() : (int) $timestamp );
 }
 
 function admin_url( $path = '' ) {
@@ -290,8 +316,45 @@ function absint( $value ) {
 	return abs( (int) $value );
 }
 
-function current_user_can( $capability ) {
+function current_user_can( $capability, ...$args ) {
+	$GLOBALS['wpinat_test']['cap_ids'][] = array_merge( array( $capability ), $args );
 	return $GLOBALS['wpinat_test']['can'];
+}
+
+function get_post( $id ) {
+	return isset( $GLOBALS['wpinat_test']['posts'][ $id ] ) ? $GLOBALS['wpinat_test']['posts'][ $id ] : null;
+}
+
+function parse_blocks( $content ) {
+	if ( null !== $GLOBALS['wpinat_test']['blocks'] ) {
+		return $GLOBALS['wpinat_test']['blocks'];
+	}
+	$out = array();
+	preg_match_all( '/<!-- wp:([a-z0-9\/-]+)( \{.*?\})? \/?-->/', $content, $m, PREG_SET_ORDER );
+	foreach ( $m as $row ) {
+		$out[] = array(
+			'blockName'   => $row[1],
+			'attrs'       => isset( $row[2] ) && '' !== $row[2] ? json_decode( $row[2], true ) : array(),
+			'innerBlocks' => array(),
+		);
+	}
+	return $out;
+}
+
+function register_rest_route( $namespace, $route, $args ) {
+	$GLOBALS['wpinat_test']['routes'][ $namespace . $route ] = $args;
+}
+
+function wp_enqueue_script( $handle, $src = '', $deps = array(), $ver = false, $in_footer = false ) {
+	$GLOBALS['wpinat_test']['scripts'][ $handle ] = array( $src, $deps, $ver, $in_footer );
+}
+
+function wp_add_inline_script( $handle, $data, $position = 'after' ) {
+	$GLOBALS['wpinat_test']['inline'][ $handle ] = array( $data, $position );
+}
+
+function plugins_url( $path = '', $plugin = '' ) {
+	return 'https://blog.example.test/wp-content/plugins/wp-inaturalist/' . $path;
 }
 
 function wp_die( $message = '', $title = '', $args = array() ) {
@@ -382,6 +445,10 @@ require_once WPINAT_DIR . 'includes/Cache.php';
 require_once WPINAT_DIR . 'includes/JobLog.php';
 require_once WPINAT_DIR . 'includes/Job.php';
 require_once WPINAT_DIR . 'includes/Scheduler.php';
+require_once WPINAT_DIR . 'includes/Period.php';
+require_once WPINAT_DIR . 'includes/PostRefresh.php';
+require_once WPINAT_DIR . 'includes/Rest.php';
+require_once WPINAT_DIR . 'includes/Assets.php';
 require_once WPINAT_DIR . 'includes/ToolsPage.php';
 require_once WPINAT_DIR . 'includes/SettingsPage.php';
 require_once WPINAT_DIR . 'includes/Setup.php';

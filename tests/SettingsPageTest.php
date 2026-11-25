@@ -84,6 +84,14 @@ final class SettingsPageTest extends TestCase {
 		$this->assertStringContainsString( '&quot;&gt;&lt;script&gt;', $html );
 	}
 
+	public function test_the_login_field_has_a_check_button_that_is_hidden_without_javascript() {
+		ob_start();
+		SettingsPage::fieldLogin();
+		$html = ob_get_clean();
+		$this->assertMatchesRegularExpression( '/<button type="button" class="button" id="wpinat-verify" hidden>Check<\/button>/', $html );
+		$this->assertStringContainsString( 'id="wpinat-verify-result" role="status"', $html );
+	}
+
 	/**
 	 * @dataProvider logins
 	 * @param mixed  $input    Submitted value.
