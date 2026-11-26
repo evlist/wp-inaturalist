@@ -43,6 +43,12 @@ final class Block {
 	 */
 	public static function editorStrings(): array {
 		return array(
+			'title'      => __( 'iNaturalist observations', 'wp-inaturalist' ),
+			/* translators: 1: number of units, 2: unit (day(s), week(s), month(s)). */
+			'summary'    => __( 'Period: %1$s %2$s', 'wp-inaturalist' ),
+			'unit_day'   => __( 'day(s)', 'wp-inaturalist' ),
+			'unit_week'  => __( 'week(s)', 'wp-inaturalist' ),
+			'unit_month' => __( 'month(s)', 'wp-inaturalist' ),
 			'period'     => __( 'Period', 'wp-inaturalist' ),
 			'number'     => __( 'Number of units', 'wp-inaturalist' ),
 			'unit'       => __( 'Unit', 'wp-inaturalist' ),

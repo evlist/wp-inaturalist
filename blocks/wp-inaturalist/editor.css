@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+.wpinat-editor {
+	border: 1px dashed currentColor;
+	padding: 0.5em 0.75em;
+}
+
+.wpinat-editor-header {
+	display: flex;
+	align-items: center;
+	gap: 0.4em;
+	margin-bottom: 0.5em;
+}
+
+.wpinat-editor-period {
+	opacity: 0.75;
+}

@@ -93,3 +93,9 @@ only reads the cache.
   any post, nothing is printed, as before.
 - Tests: 340 PHP and 29 JavaScript. One of the new JavaScript guards (`typeof` and `isFinite` on the id) is redundant with the two
   checks after it and is kept as documentation.
+- **Identity of the block in the editor** (Eric, 2026-11-26): once the error was fixed, the preview of a block in a template was
+  only an italic hint and nothing said it was the iNaturalist block (wp-whobird's block shows its icon and name). The block now
+  always shows a header with its icon, its name and its period ("Observations iNaturalist — Période : 3 semaine(s)"), above
+  the preview, in a dashed frame (`blocks/wp-inaturalist/editor.css`). The period fields stay in the sidebar; showing them in the
+  block as wp-whobird does belongs to the homogeneity question (open question 6). Tried only under jsdom-free fake `wp` tests:
+  never seen in a real editor.

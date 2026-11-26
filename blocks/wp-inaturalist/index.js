@@ -13,6 +13,12 @@
 		return;
 	}
 	var strings = config.strings;
+	var i18nKeys = [ 'title', 'summary', 'unit_day', 'unit_week', 'unit_month' ];
+	for ( var k = 0; k < i18nKeys.length; k++ ) {
+		if ( 'string' !== typeof strings[ i18nKeys[ k ] ] ) {
+			strings[ i18nKeys[ k ] ] = '';
+		}
+	}
 	var h = wp.element.createElement;
 	var UNITS = [ 'day', 'week', 'month' ];
 
@@ -23,11 +29,22 @@
 		var currentId = wp.data && wp.data.select( 'core/editor' ) ? wp.data.select( 'core/editor' ).getCurrentPostId() : undefined;
 		var postId = 'number' === typeof currentId && isFinite( currentId ) && currentId > 0 && Math.floor( currentId ) === currentId ? currentId : undefined;
 		var queryArgs = undefined === postId ? {} : { post_id: postId };
-		var blockProps = wp.blockEditor.useBlockProps ? wp.blockEditor.useBlockProps() : {};
+		var blockProps = wp.blockEditor.useBlockProps ? wp.blockEditor.useBlockProps( { className: 'wpinat-editor' } ) : { className: 'wpinat-editor' };
+		// Always say which block this is: the preview below can be a plain hint, which looks like a paragraph.
+		var number = attributes.periodNumber;
+		var unit = UNITS.indexOf( attributes.periodUnit ) >= 0 ? attributes.periodUnit : 'day';
+		var summary = strings.summary.replace( '%1$s', String( number ) ).replace( '%2$s', strings[ 'unit_' + unit ] );
 
 		return h(
 			'div',
 			blockProps,
+			h(
+				'div',
+				{ className: 'wpinat-editor-header' },
+				wp.components.Icon ? h( wp.components.Icon, { icon: 'palmtree' } ) : null,
+				h( 'strong', { className: 'wpinat-editor-title' }, strings.title ),
+				h( 'span', { className: 'wpinat-editor-period' }, ' — ' + summary )
+			),
 			h(
 				wp.blockEditor.InspectorControls,
 				null,

@@ -10,7 +10,7 @@ const vm = require( 'node:vm' );
 
 const source = fs.readFileSync( path.join( __dirname, '..', '..', 'blocks', 'wp-inaturalist', 'index.js' ), 'utf8' );
 
-const STRINGS = { error: 'Preview error.', period: 'Period', number: 'Number', unit: 'Unit', day: 'Days', week: 'Weeks', month: 'Months', help: 'Help', empty_html: 'Nothing yet.' };
+const STRINGS = { title: 'iNaturalist observations', summary: 'Period: %1$s %2$s', unit_day: 'day(s)', unit_week: 'week(s)', unit_month: 'month(s)', error: 'Preview error.', period: 'Period', number: 'Number', unit: 'Unit', day: 'Days', week: 'Weeks', month: 'Months', help: 'Help', empty_html: 'Nothing yet.' };
 
 function load( { config = { strings: STRINGS }, omit = null, currentId = 42 } = {} ) {
 	const registered = [];
@@ -18,8 +18,8 @@ function load( { config = { strings: STRINGS }, omit = null, currentId = 42 } = 
 	const wp = {
 		blocks: { registerBlockType: ( name, settings ) => registered.push( { name, settings } ) },
 		element: { createElement: ( type, props, ...children ) => ( { type, props, children } ) },
-		blockEditor: { InspectorControls: names.InspectorControls, useBlockProps: () => ( { className: 'bp' } ) },
-		components: { PanelBody: names.PanelBody, TextControl: names.TextControl, SelectControl: names.SelectControl },
+		blockEditor: { InspectorControls: names.InspectorControls, useBlockProps: ( extra ) => ( { className: 'bp ' + ( ( extra && extra.className ) || '' ) } ) },
+		components: { PanelBody: names.PanelBody, TextControl: names.TextControl, SelectControl: names.SelectControl, Icon: 'ICON' },
 		serverSideRender: 'SSR',
 		data: { select: () => ( { getCurrentPostId: () => currentId } ) },
 	};
@@ -86,6 +86,40 @@ test( 'an error of the route is shown as readable text, never as [object Object]
 	assert.equal( shown( { response: { errorMsg: { nested: 'object' } } } ), 'Preview error.' );
 	assert.equal( shown( undefined ), 'Preview error.' );
 	assert.doesNotMatch( shown( { response: { errorMsg: { a: 1 } } } ), /object/i );
+} );
+
+test( 'the block always says which block it is: icon, title and period, above the preview', () => {
+	const { tree } = render( { periodNumber: 3, periodUnit: 'week' } );
+	assert.match( tree.props.className, /wpinat-editor/ );
+	const header = tree.children[ 0 ];
+	assert.equal( header.props.className, 'wpinat-editor-header' );
+	assert.equal( find( header, 'ICON' )[ 0 ].props.icon, 'palmtree' );
+	assert.equal( find( header, 'strong' )[ 0 ].children[ 0 ], 'iNaturalist observations' );
+	assert.equal( find( header, 'span' )[ 0 ].children[ 0 ], ' — Period: 3 week(s)' );
+	const order = tree.children.map( ( child ) => child.type );
+	assert.ok( order.indexOf( 'div' ) < order.indexOf( 'SSR' ), 'the header comes before the preview' );
+} );
+
+test( 'the period line follows each unit and falls back to days for an unknown unit', () => {
+	for ( const [ unit, word ] of [ [ 'day', 'day(s)' ], [ 'week', 'week(s)' ], [ 'month', 'month(s)' ], [ 'year', 'day(s)' ] ] ) {
+		const { tree } = render( { periodNumber: 2, periodUnit: unit } );
+		assert.equal( find( tree.children[ 0 ], 'span' )[ 0 ].children[ 0 ], ' — Period: 2 ' + word, unit );
+	}
+} );
+
+test( 'without wp.components.Icon the header still shows the title', () => {
+	const registered = [];
+	const wp = {
+		blocks: { registerBlockType: ( name, settings ) => registered.push( settings ) },
+		element: { createElement: ( type, props, ...children ) => ( { type, props, children } ) },
+		blockEditor: { InspectorControls: 'IC' },
+		components: { PanelBody: 'PB', TextControl: 'TC', SelectControl: 'SC' },
+		serverSideRender: 'SSR',
+		data: { select: () => ( { getCurrentPostId: () => 1 } ) },
+	};
+	vm.runInNewContext( source, { window: { wp, wpinatBlock: { strings: STRINGS } } } );
+	const tree = registered[ 0 ].edit( { attributes: { periodNumber: 1, periodUnit: 'day' }, setAttributes: () => {} } );
+	assert.equal( find( tree.children[ 0 ], 'strong' )[ 0 ].children[ 0 ], 'iNaturalist observations' );
 } );
 
 test( 'the number control clamps what is typed to 1..100', () => {

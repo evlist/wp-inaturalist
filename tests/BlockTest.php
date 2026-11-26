@@ -238,5 +238,10 @@ final class BlockTest extends TestCase {
 
 	public function test_the_editor_strings_include_the_error_text() {
 		$this->assertArrayHasKey( 'error', Block::editorStrings() );
+		foreach ( array( 'title', 'summary', 'unit_day', 'unit_week', 'unit_month' ) as $key ) {
+			$this->assertArrayHasKey( $key, Block::editorStrings(), 'used by the header of the block in the editor' );
+		}
+		$this->assertStringContainsString( '%1$s', Block::editorStrings()['summary'] );
+		$this->assertFileExists( WPINAT_DIR . 'blocks/wp-inaturalist/editor.css' );
 	}
 }
