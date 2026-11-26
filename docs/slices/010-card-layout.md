@@ -38,8 +38,10 @@ clash with a possible map extension of the two plugins. The stored value stays t
 5. **Style** (`blocks/wp-inaturalist/style.css`): the values of wp-whobird's cards (background `#f9f9f9`, 1 px `#ddd` border, 4 px
    radius, 16 px bold name, 14 px italic Latin name in the theme's neutral colour, one column below 768 px and two above, two
    columns when printing). The `gallery` layout keeps its previous markup and style, scoped to its own class.
-6. **Icons** are drawn in the plugin (a small inline SVG eye for the observation, the letter "W" for Wikipedia): no icon font, no
-   dependency on wp-whobird, and no use of the iNaturalist or Wikipedia logos (trademarks).
+6. **Icons**: the same Font Awesome Free 6.7.2 icons as wp-whobird (the Wikipedia "W" and the external-link mark), plus the
+   outline eye for the observation, as **inline SVG** from constant data (`includes/IconsData.php`, `includes/Icons.php`): no icon
+   font, no dependency on wp-whobird. The icons are under CC BY 4.0 (`LICENSES/CC-BY-4.0.txt`, SPDX header of the data file,
+   note in the README); the iNaturalist logo is not used (trademark).
 7. `data-index` (slice 007) stays on each `<li>`, in both layouts.
 
 ## Not in this slice
@@ -67,6 +69,17 @@ clash with a possible map extension of the two plugins. The stored value stays t
   the plugin is updated; `gallery` restores the previous look block by block.
 - Cards are `<li>` with spans (no `<figure>`); the whole card is not clickable (wp-whobird's cards are, for its audio player).
 
+## Correction after the first look on Eric's site (2026-11-26)
+
+Eric compared the first version with wp-whobird's cards on a real page and listed small differences: the Wikipedia logo, the
+arrow, the height of the cards. Measured in Chromium against a copy of wp-whobird's card with its real stylesheet and the
+Font Awesome files it bundles (a page with the font size and line height of his theme, 18 px and 1.7): the first version drew
+the "W" as a serif letter and the mark as a "↗" character, and **two-link cards were 95 px high against 86 px**. Now the icons
+are the same Font Awesome glyphs, the link markup follows wp-whobird's (main icon at 1.5em, mark as an exponent at the top
+right), the links column has no minimal height of its own, and the cards are **86 px** high with and without two links, the
+links column has the same width (33.8 px) and the same position, and the text the same offset as wp-whobird's. The eye is the
+outline version because the solid one looked heavier than the thin "W"; two links get 4 px of space from the top and bottom edges.
+
 ## Verification status
 
 - **Automated tests**: 446 PHP tests (26 new) and 33 JavaScript tests (1 new): the default and the wrapper class, the thumbnail, the
@@ -75,11 +88,12 @@ clash with a possible map extension of the two plugins. The stored value stays t
   language in the tooltip), a table of malformed Wikipedia addresses (look-alike hosts, not an article, `javascript:`...), the
   observation link (shown photo, else the first one, only `https`), the count, the media library copy and the option, escaping,
   the index mark on cards, the gallery unchanged, the block attribute and the layout control of the editor.
-- Fourteen deliberate breakages: all detected.
+- Fourteen deliberate breakages of the renderer and the block: all detected. Of four on the icons, two stay undetected because they
+  are redundant defences (the name check, since an unknown name is also absent from the data; the pattern check of constant paths).
 - **Visual check** (Chromium, 760 and 380 px wide, rendering the real markup with the real stylesheet next to a copy of a wp-whobird
-  card using its real stylesheet): same card size, border, radius, thumbnail, text sizes and one-to-two column behaviour; the
-  two links are at the top and the bottom, a single one is centred; long names wrap; the gallery option still renders. The
-  photos in that page were substitutes (unrelated iNaturalist photos), so the real look with Eric's photos is not checked.
+  card using its real stylesheet and Font Awesome): same card size (86 px, measured), border, radius, thumbnail, text offsets,
+  text sizes, icons and one-to-two column behaviour; the two links are at the top and the bottom, a single one is centred; long
+  names wrap; the gallery option still renders. The photos in that page were substitutes (unrelated iNaturalist photos).
 - **Never tried**: in WordPress with the theme's styles (colours from `--wp--preset--color--neutral`, fonts, the width of the
   content column), on a touch screen (the icons are 1.5 em: size of the tap targets is a guess), printing, the editor preview of
   the layout, and the French labels on screen ("Fiches", "Galerie").

@@ -24,11 +24,6 @@ final class Renderer {
 	const GALLERY   = 'gallery';
 
 	/**
-	 * Inline icon of the observation link (an eye, drawn here: not a logo). Constant markup, no data.
-	 */
-	const EYE_ICON = '<svg class="wpinat-icon" viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true" focusable="false"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
-
-	/**
 	 * Groups the cached observations by taxon, in order of first observation.
 	 *
 	 * An observation without taxon cannot be named and is left out.
@@ -243,7 +238,7 @@ final class Renderer {
 		$observation = '' !== $group['uri'] ? (string) $group['uri'] : (string) $group['first_uri'];
 		if ( 0 === strpos( $observation, 'https://' ) ) {
 			$label  = __( 'View the observation on iNaturalist', 'wp-inaturalist' );
-			$links .= self::link( 'observation', $observation, $label, self::EYE_ICON );
+			$links .= self::link( 'observation', $observation, $label, Icons::svg( 'eye', 'wpinat-main' ) );
 			++$count;
 		}
 		$wiki = self::wikipedia( $group, $item );
@@ -252,7 +247,7 @@ final class Renderer {
 				? __( 'Wikipedia article', 'wp-inaturalist' )
 				/* translators: %s: language code of the article, for example "en". */
 				: sprintf( __( 'Wikipedia article (%s)', 'wp-inaturalist' ), $wiki['lang'] );
-			$links .= self::link( 'wikipedia', $wiki['url'], $label, '<span class="wpinat-icon-w" aria-hidden="true">W</span>' );
+			$links .= self::link( 'wikipedia', $wiki['url'], $label, Icons::svg( 'wikipedia-w', 'wpinat-main' ) );
 			++$count;
 		}
 		return 0 === $count ? '' : '<span class="wpinat-links wpinat-links-' . $count . '">' . $links . '</span>';
@@ -268,7 +263,7 @@ final class Renderer {
 	 */
 	private static function link( string $kind, string $url, string $label, string $icon ): string {
 		return '<a class="wpinat-link wpinat-link-' . $kind . '" href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer" aria-label="' . esc_attr( $label ) . '" title="' . esc_attr( $label ) . '">'
-			. $icon . '<span class="wpinat-ext" aria-hidden="true">↗</span></a>';
+			. $icon . Icons::svg( 'up-right-from-square', 'wpinat-ext' ) . '</a>';
 	}
 
 	/**

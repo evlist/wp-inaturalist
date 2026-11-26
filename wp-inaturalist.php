@@ -34,6 +34,7 @@ require_once WPINAT_DIR . 'includes/Schema.php';
 require_once WPINAT_DIR . 'includes/Cache.php';
 require_once WPINAT_DIR . 'includes/JobLog.php';
 require_once WPINAT_DIR . 'includes/Job.php';
+require_once WPINAT_DIR . 'includes/Icons.php';
 require_once WPINAT_DIR . 'includes/Http.php';
 require_once WPINAT_DIR . 'includes/SyncState.php';
 require_once WPINAT_DIR . 'includes/Taxa.php';

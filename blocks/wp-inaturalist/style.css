@@ -73,30 +73,29 @@
 	color: var(--wp--preset--color--neutral, #555);
 }
 
-/* At most two links, on the right: the observation at the top, Wikipedia at the bottom; a single one is centred. */
+/*
+ * The links, on the right. Same structure and values as wp-whobird's Wikipedia link: a main icon at 1.5em and the external-link
+ * mark as a small exponent (the same Font Awesome icons). A single link sits in the middle of the card as theirs does; two links
+ * (the observation at the top, Wikipedia at the bottom) are spread from the top to the bottom of the card.
+ */
 .wpinat-layout-card .wpinat-links {
-	display: flex;
-	flex-direction: column;
-	align-self: stretch;
-	justify-content: space-between;
-	align-items: flex-end;
 	margin-left: auto;
-	padding: 4px 6px;
 }
 
-.wpinat-layout-card .wpinat-links-1 {
-	justify-content: center;
+.wpinat-layout-card .wpinat-links-2 {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: flex-end;
+	align-self: stretch;
+	padding: 4px 0;
 }
 
 .wpinat-layout-card .wpinat-link {
 	position: relative;
 	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 1.5em;
-	min-height: 1.5em;
-	font-size: 1.5em;
-	line-height: 1;
+	align-items: baseline;
+	gap: 0.5em;
 	text-decoration: none;
 	color: var(--wp--preset--color--neutral, #888);
 }
@@ -111,17 +110,31 @@
 	outline-offset: 2px;
 }
 
-.wpinat-layout-card .wpinat-icon-w {
-	font-family: Georgia, "Times New Roman", serif;
-	font-weight: bold;
+.wpinat-layout-card .wpinat-fa {
+	display: inline-block;
+	fill: currentColor;
+	overflow: visible;
+	vertical-align: middle;
 }
 
-/* The small external-link mark, as an exponent. */
+.wpinat-layout-card .wpinat-main {
+	height: 1.5em;
+}
+
+.wpinat-layout-card .wpinat-fa-wikipedia-w {
+	width: 1.875em; /* 640 / 512 of the height */
+}
+
+.wpinat-layout-card .wpinat-fa-eye {
+	width: 1.6875em; /* 576 / 512 of the height */
+}
+
 .wpinat-layout-card .wpinat-ext {
 	position: absolute;
-	top: -0.1em;
+	top: 0;
 	right: -0.5em;
-	font-size: 0.45em;
+	width: 0.75em;
+	height: 0.75em;
 }
 
 @media print {

@@ -481,9 +481,10 @@ final class RendererTest extends TestCase {
 		$this->assertTrue( $obs > 0 && $wiki > $obs, 'observation first (top), Wikipedia second (bottom)' );
 		$this->assertStringContainsString( 'href="https://www.inaturalist.org/observations/1" target="_blank" rel="noopener noreferrer" aria-label="View the observation on iNaturalist" title="View the observation on iNaturalist"', $html );
 		$this->assertStringContainsString( 'href="https://fr.wikipedia.org/wiki/Moqueur_polyglotte" target="_blank" rel="noopener noreferrer" aria-label="Wikipedia article" title="Wikipedia article"', $html );
-		$this->assertSame( 2, substr_count( $html, 'class="wpinat-ext" aria-hidden="true">↗</span>' ), 'the external-link mark, hidden from screen readers' );
-		$this->assertStringContainsString( '<svg class="wpinat-icon"', $html );
-		$this->assertStringContainsString( '<span class="wpinat-icon-w" aria-hidden="true">W</span>', $html );
+		$this->assertSame( 2, substr_count( $html, '<svg class="wpinat-fa wpinat-fa-up-right-from-square wpinat-ext"' ), 'the external-link mark of each link' );
+		$this->assertStringContainsString( '<svg class="wpinat-fa wpinat-fa-eye wpinat-main"', $html );
+		$this->assertStringContainsString( '<svg class="wpinat-fa wpinat-fa-wikipedia-w wpinat-main"', $html );
+		$this->assertSame( 4, substr_count( $html, 'aria-hidden="true" focusable="false"' ), 'every icon is hidden from screen readers: the links have their own name' );
 	}
 
 	public function test_without_any_wikipedia_article_there_is_one_centred_link() {

@@ -30,3 +30,9 @@ user during the period around a post's date. It is meant for a travel blog, next
 | Slices of work | [`docs/slices/README.md`](docs/slices/README.md) |
 | Open questions | [`docs/open-questions.md`](docs/open-questions.md) |
 | Instructions for Claude Code sessions | [`CLAUDE.md`](CLAUDE.md) |
+
+## Third-party material
+
+- **Icons**: the Wikipedia "W", the external-link mark and the eye of the cards are icons of [Font Awesome Free](https://fontawesome.com/)
+  6.7.2, © Fonticons, Inc., licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (`LICENSES/CC-BY-4.0.txt`,
+  `includes/IconsData.php`). They are unchanged. The same icons are used by wp-whobird.
