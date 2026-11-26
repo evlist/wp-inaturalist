@@ -10,7 +10,7 @@ const vm = require( 'node:vm' );
 
 const source = fs.readFileSync( path.join( __dirname, '..', '..', 'blocks', 'wp-inaturalist', 'index.js' ), 'utf8' );
 
-const STRINGS = { title: 'iNaturalist observations', summary: 'Period: %1$s %2$s', unit_day: 'day(s)', unit_week: 'week(s)', unit_month: 'month(s)', error: 'Preview error.', period: 'Period', number: 'Number', unit: 'Unit', day: 'Days', week: 'Weeks', month: 'Months', help: 'Help', empty_html: 'Nothing yet.' };
+const STRINGS = { layout: 'Layout', layout_card: 'Cards', layout_gallery: 'Gallery', title: 'iNaturalist observations', summary: 'Period: %1$s %2$s', unit_day: 'day(s)', unit_week: 'week(s)', unit_month: 'month(s)', error: 'Preview error.', period: 'Period', number: 'Number', unit: 'Unit', day: 'Days', week: 'Weeks', month: 'Months', help: 'Help', empty_html: 'Nothing yet.' };
 
 function load( { config = { strings: STRINGS }, omit = null, currentId = 42 } = {} ) {
 	const registered = [];
@@ -65,6 +65,23 @@ test( 'the preview is server-side rendered for the post being edited', () => {
 	assert.equal( ssr.props.attributes.periodNumber, 3 );
 	assert.equal( ssr.props.urlQueryArgs.post_id, 42 );
 	assert.equal( ssr.props.EmptyResponsePlaceholder().children[ 0 ], 'Nothing yet.' );
+} );
+
+test( 'the layout select offers cards and gallery, shows card by default and refuses anything else', () => {
+	const { tree, calls } = render();
+	const selects = find( tree, 'SC' );
+	const layout = selects.find( ( s ) => s.props.label === 'Layout' );
+	assert.ok( layout, 'a Layout control exists' );
+	same( layout.props.options, [ { value: 'card', label: 'Cards' }, { value: 'gallery', label: 'Gallery' } ] );
+	assert.equal( layout.props.value, 'card', 'a block saved before the layout existed shows the new default' );
+	layout.props.onChange( 'gallery' );
+	assert.equal( calls.pop().layout, 'gallery' );
+	layout.props.onChange( 'carte' );
+	assert.equal( calls.pop().layout, 'card' );
+	const stored = render( { periodNumber: 1, periodUnit: 'day', layout: 'gallery' } );
+	assert.equal( find( stored.tree, 'SC' ).find( ( s ) => s.props.label === 'Layout' ).props.value, 'gallery' );
+	const odd = render( { periodNumber: 1, periodUnit: 'day', layout: 'nope' } );
+	assert.equal( find( odd.tree, 'SC' ).find( ( s ) => s.props.label === 'Layout' ).props.value, 'card' );
 } );
 
 test( 'in the Site Editor the id is the text of a template: no post_id is sent (the route only accepts integers)', () => {

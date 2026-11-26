@@ -244,4 +244,25 @@ final class BlockTest extends TestCase {
 		$this->assertStringContainsString( '%1$s', Block::editorStrings()['summary'] );
 		$this->assertFileExists( WPINAT_DIR . 'blocks/wp-inaturalist/editor.css' );
 	}
+
+	public function test_the_block_uses_the_card_layout_by_default_and_the_gallery_when_asked() {
+		$this->assertStringContainsString( 'wpinat-layout-card', Block::render( array() ) );
+		$this->assertStringContainsString( 'wpinat-layout-card', Block::render( array( 'layout' => 'card' ) ) );
+		$this->assertStringContainsString( 'wpinat-layout-gallery', Block::render( array( 'layout' => 'gallery' ) ) );
+		foreach ( array( 'carte', '<script>', '', null, 5, array( 'gallery' ) ) as $bad ) {
+			$this->assertStringContainsString( 'wpinat-layout-card', Block::render( array( 'layout' => $bad ) ), var_export( $bad, true ) );
+		}
+	}
+
+	public function test_block_json_declares_the_layout_with_the_card_default() {
+		$json = json_decode( file_get_contents( WPINAT_DIR . 'blocks/wp-inaturalist/block.json' ), true );
+		$this->assertSame( 'card', $json['attributes']['layout']['default'] );
+		$this->assertSame( 'string', $json['attributes']['layout']['type'] );
+	}
+
+	public function test_the_editor_strings_include_the_layout_labels() {
+		foreach ( array( 'layout', 'layout_card', 'layout_gallery' ) as $key ) {
+			$this->assertArrayHasKey( $key, Block::editorStrings() );
+		}
+	}
 }

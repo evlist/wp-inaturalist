@@ -66,11 +66,18 @@ publication does when the post date is in the past.
 Slice 007 now stores the Wikipedia article in the site language, found through Wikidata (not displayed yet): the choice below
 is reduced to whether and how to show it.
 
+Slice 010 shows the link: the article in the site language through Wikidata, else the English article iNaturalist gives (with its
+language in the tooltip), else none.
+
 ## 5. Wikipedia link in the site language
 
 iNaturalist gives only the English Wikipedia page (`http://en.wikipedia.org/wiki/...`). wp-whobird gets the pages from
 Wikidata. Options: link to the English page as given (with `https`); or ask Wikidata for the page in the site language
 (a second external service and a cache, as in wp-whobird); or link to the iNaturalist taxon page only.
+
+**Slice 010 (coded) answers the grid part:** cards like wp-whobird's by default, the large-photo grid as the `gallery` option,
+two links (the observation on top, Wikipedia at the bottom). Still open below: the period fields inside the block, and the shared
+style with `wp-otherguise`.
 
 ## 6. Presentation closer to wp-whobird (raised by Eric on 2026-11-25, to keep in mind)
 

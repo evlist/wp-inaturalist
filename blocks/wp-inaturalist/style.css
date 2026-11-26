@@ -2,7 +2,144 @@
  * SPDX-FileCopyrightText: 2026 Eric van der Vlist <vdv@dyomedea.com>
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-.wpinat-list {
+
+/*
+ * Card layout (the default): the same look as the cards of wp-whobird (values copied from its style.css), so that the two blocks
+ * are homogeneous on a page. One column on small screens, two from 768 px.
+ */
+.wpinat-layout-card .wpinat-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px;
+}
+
+@media (min-width: 768px) {
+	.wpinat-layout-card .wpinat-list {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.wpinat-layout-card .wpinat-entry {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0;
+	padding: 2px;
+	background: #f9f9f9;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+.wpinat-layout-card .wpinat-thumb {
+	flex-shrink: 0;
+	margin-right: 16px;
+}
+
+.wpinat-layout-card .wpinat-thumb img {
+	display: block;
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+	border-radius: 4px;
+}
+
+.wpinat-layout-card .wpinat-info {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.wpinat-layout-card .wpinat-name {
+	font-size: 16px;
+	font-weight: bold;
+}
+
+.wpinat-layout-card .wpinat-name::first-letter {
+	text-transform: uppercase;
+}
+
+.wpinat-layout-card .wpinat-count {
+	font-weight: normal;
+	opacity: 0.75;
+	white-space: nowrap;
+}
+
+.wpinat-layout-card .wpinat-latin {
+	font-size: 14px;
+	font-style: italic;
+	color: var(--wp--preset--color--neutral, #555);
+}
+
+/* At most two links, on the right: the observation at the top, Wikipedia at the bottom; a single one is centred. */
+.wpinat-layout-card .wpinat-links {
+	display: flex;
+	flex-direction: column;
+	align-self: stretch;
+	justify-content: space-between;
+	align-items: flex-end;
+	margin-left: auto;
+	padding: 4px 6px;
+}
+
+.wpinat-layout-card .wpinat-links-1 {
+	justify-content: center;
+}
+
+.wpinat-layout-card .wpinat-link {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.5em;
+	min-height: 1.5em;
+	font-size: 1.5em;
+	line-height: 1;
+	text-decoration: none;
+	color: var(--wp--preset--color--neutral, #888);
+}
+
+.wpinat-layout-card .wpinat-link:hover,
+.wpinat-layout-card .wpinat-link:focus {
+	color: var(--wp--preset--color--neutral, #333);
+}
+
+.wpinat-layout-card .wpinat-link:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.wpinat-layout-card .wpinat-icon-w {
+	font-family: Georgia, "Times New Roman", serif;
+	font-weight: bold;
+}
+
+/* The small external-link mark, as an exponent. */
+.wpinat-layout-card .wpinat-ext {
+	position: absolute;
+	top: -0.1em;
+	right: -0.5em;
+	font-size: 0.45em;
+}
+
+@media print {
+	.wpinat-layout-card .wpinat-list {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.wpinat-layout-card .wpinat-links {
+		display: none;
+	}
+
+	.wpinat-layout-card .wpinat-entry {
+		page-break-inside: avoid;
+	}
+}
+
+/* Gallery layout: the previous presentation, a grid of large photos with a credit line. */
+.wpinat-layout-gallery .wpinat-list {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
 	gap: 1rem;
@@ -11,15 +148,15 @@
 	list-style: none;
 }
 
-.wpinat-entry {
+.wpinat-layout-gallery .wpinat-entry {
 	margin: 0;
 }
 
-.wpinat-photo {
+.wpinat-layout-gallery .wpinat-photo {
 	margin: 0 0 0.25rem;
 }
 
-.wpinat-photo img {
+.wpinat-layout-gallery .wpinat-photo img {
 	display: block;
 	width: 100%;
 	height: auto;
@@ -27,16 +164,16 @@
 	object-fit: cover;
 }
 
-.wpinat-credit {
+.wpinat-layout-gallery .wpinat-credit {
 	font-size: 0.7em;
 	opacity: 0.75;
 }
 
-.wpinat-latin {
+.wpinat-layout-gallery .wpinat-latin {
 	opacity: 0.8;
 }
 
-.wpinat-count {
+.wpinat-layout-gallery .wpinat-count {
 	opacity: 0.8;
 	white-space: nowrap;
 }

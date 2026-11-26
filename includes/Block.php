@@ -43,21 +43,25 @@ final class Block {
 	 */
 	public static function editorStrings(): array {
 		return array(
-			'title'      => __( 'iNaturalist observations', 'wp-inaturalist' ),
+			'title'          => __( 'iNaturalist observations', 'wp-inaturalist' ),
 			/* translators: 1: number of units, 2: unit (day(s), week(s), month(s)). */
-			'summary'    => __( 'Period: %1$s %2$s', 'wp-inaturalist' ),
-			'unit_day'   => __( 'day(s)', 'wp-inaturalist' ),
-			'unit_week'  => __( 'week(s)', 'wp-inaturalist' ),
-			'unit_month' => __( 'month(s)', 'wp-inaturalist' ),
-			'period'     => __( 'Period', 'wp-inaturalist' ),
-			'number'     => __( 'Number of units', 'wp-inaturalist' ),
-			'unit'       => __( 'Unit', 'wp-inaturalist' ),
-			'day'        => __( 'Days', 'wp-inaturalist' ),
-			'week'       => __( 'Weeks', 'wp-inaturalist' ),
-			'month'      => __( 'Months', 'wp-inaturalist' ),
-			'help'       => __( 'The period ends on the date of the post.', 'wp-inaturalist' ),
-			'empty_html' => __( 'Nothing to show yet.', 'wp-inaturalist' ),
-			'error'      => __( 'The preview could not be loaded.', 'wp-inaturalist' ),
+			'summary'        => __( 'Period: %1$s %2$s', 'wp-inaturalist' ),
+			'unit_day'       => __( 'day(s)', 'wp-inaturalist' ),
+			'unit_week'      => __( 'week(s)', 'wp-inaturalist' ),
+			'unit_month'     => __( 'month(s)', 'wp-inaturalist' ),
+			'layout'         => __( 'Layout', 'wp-inaturalist' ),
+			/* translators: layout of the block, compact entries like wp-whobird. In French say fiches, not cartes (which also means maps). */
+			'layout_card'    => __( 'Cards', 'wp-inaturalist' ),
+			'layout_gallery' => __( 'Gallery', 'wp-inaturalist' ),
+			'period'         => __( 'Period', 'wp-inaturalist' ),
+			'number'         => __( 'Number of units', 'wp-inaturalist' ),
+			'unit'           => __( 'Unit', 'wp-inaturalist' ),
+			'day'            => __( 'Days', 'wp-inaturalist' ),
+			'week'           => __( 'Weeks', 'wp-inaturalist' ),
+			'month'          => __( 'Months', 'wp-inaturalist' ),
+			'help'           => __( 'The period ends on the date of the post.', 'wp-inaturalist' ),
+			'empty_html'     => __( 'Nothing to show yet.', 'wp-inaturalist' ),
+			'error'          => __( 'The preview could not be loaded.', 'wp-inaturalist' ),
 		);
 	}
 
@@ -93,8 +97,9 @@ final class Block {
 			return '';
 		}
 		global $wpdb;
-		$rows = ( new Cache( $wpdb ) )->getBetween( $login, $range[0], $range[1] );
-		$html = Renderer::html( $rows, ( new Taxa( $wpdb ) )->get( array_column( Renderer::group( $rows ), 'taxon_id' ) ) );
+		$rows   = ( new Cache( $wpdb ) )->getBetween( $login, $range[0], $range[1] );
+		$layout = ( isset( $attributes['layout'] ) && Renderer::GALLERY === $attributes['layout'] ) ? Renderer::GALLERY : Renderer::CARD;
+		$html   = Renderer::html( $rows, ( new Taxa( $wpdb ) )->get( array_column( Renderer::group( $rows ), 'taxon_id' ) ), $layout );
 		if ( '' === $html && $editing ) {
 			return self::hint( __( 'No observation in the cache for this period. Save the post, then use "Refresh observations" in the sidebar.', 'wp-inaturalist' ) );
 		}

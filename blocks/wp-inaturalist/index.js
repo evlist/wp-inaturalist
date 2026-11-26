@@ -13,7 +13,7 @@
 		return;
 	}
 	var strings = config.strings;
-	var i18nKeys = [ 'title', 'summary', 'unit_day', 'unit_week', 'unit_month' ];
+	var i18nKeys = [ 'title', 'summary', 'unit_day', 'unit_week', 'unit_month', 'layout', 'layout_card', 'layout_gallery' ];
 	for ( var k = 0; k < i18nKeys.length; k++ ) {
 		if ( 'string' !== typeof strings[ i18nKeys[ k ] ] ) {
 			strings[ i18nKeys[ k ] ] = '';
@@ -21,6 +21,7 @@
 	}
 	var h = wp.element.createElement;
 	var UNITS = [ 'day', 'week', 'month' ];
+	var LAYOUTS = [ 'card', 'gallery' ];
 
 	function Edit( props ) {
 		var attributes = props.attributes;
@@ -71,6 +72,16 @@
 						help: strings.help,
 						onChange: function ( value ) {
 							props.setAttributes( { periodUnit: UNITS.indexOf( value ) >= 0 ? value : 'day' } );
+						},
+					} ),
+					h( wp.components.SelectControl, {
+						label: strings.layout,
+						value: LAYOUTS.indexOf( attributes.layout ) >= 0 ? attributes.layout : 'card',
+						options: LAYOUTS.map( function ( layout ) {
+							return { value: layout, label: strings[ 'layout_' + layout ] };
+						} ),
+						onChange: function ( value ) {
+							props.setAttributes( { layout: LAYOUTS.indexOf( value ) >= 0 ? value : 'card' } );
 						},
 					} )
 				)

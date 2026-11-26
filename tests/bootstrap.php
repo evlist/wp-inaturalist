@@ -470,8 +470,13 @@ function wp_get_attachment_image( $id, $size = 'thumbnail', $icon = false, $attr
 	if ( ! isset( $GLOBALS['wpinat_test']['attachments'][ $id ] ) ) {
 		return '';
 	}
-	$alt = is_array( $attr ) && isset( $attr['alt'] ) ? esc_attr( $attr['alt'] ) : '';
-	return '<img src="' . esc_url( $GLOBALS['wpinat_test']['attachments'][ $id ] ) . '" alt="' . $alt . '" class="local" />';
+	$alt   = is_array( $attr ) && isset( $attr['alt'] ) ? esc_attr( $attr['alt'] ) : '';
+	$extra = '';
+	foreach ( array( 'title', 'sizes' ) as $name ) {
+		$extra .= is_array( $attr ) && isset( $attr[ $name ] ) ? ' ' . $name . '="' . esc_attr( $attr[ $name ] ) . '"' : '';
+	}
+	$size = is_array( $size ) ? implode( 'x', $size ) : $size;
+	return '<img src="' . esc_url( $GLOBALS['wpinat_test']['attachments'][ $id ] ) . '" alt="' . $alt . '"' . $extra . ' data-size="' . $size . '" class="local" />';
 }
 
 function get_edit_post_link( $id ) {

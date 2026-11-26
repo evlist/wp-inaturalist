@@ -23,6 +23,10 @@
 		"periodUnit": {
 			"type": "string",
 			"default": "day"
+		},
+		"layout": {
+			"type": "string",
+			"default": "card"
 		}
 	}
 }
