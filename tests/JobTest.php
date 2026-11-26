@@ -853,7 +853,7 @@ final class JobTest extends TestCase {
 	}
 
 	public function test_a_linker_that_cannot_link_rows_is_not_asked_to_walk_the_marker_as_a_range() {
-		$linker = new class() {
+		$linker       = new class() {
 			public $ranges = array();
 			public function linkRange( $login, $from, $to ) {
 				$this->ranges[] = array( $from, $to );
