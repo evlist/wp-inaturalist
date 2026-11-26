@@ -51,6 +51,7 @@ final class Block {
 			'month'      => __( 'Months', 'wp-inaturalist' ),
 			'help'       => __( 'The period ends on the date of the post.', 'wp-inaturalist' ),
 			'empty_html' => __( 'Nothing to show yet.', 'wp-inaturalist' ),
+			'error'      => __( 'The preview could not be loaded.', 'wp-inaturalist' ),
 		);
 	}
 
@@ -59,18 +60,21 @@ final class Block {
 	 *
 	 * @param array  $attributes Block attributes.
 	 * @param string $content    Inner content (none).
-	 * @param mixed  $block      Block instance.
+	 * @param mixed  $block      Block instance (its context gives the post when the block is in a template).
 	 */
 	public static function render( $attributes = array(), $content = '', $block = null ): string {
-		unset( $content, $block );
+		unset( $content );
 		$editing = defined( 'REST_REQUEST' ) && REST_REQUEST;
 		$login   = Config::getLogin();
 		if ( '' === $login ) {
 			return $editing ? self::hint( __( 'Set the iNaturalist login in the settings first.', 'wp-inaturalist' ) ) : '';
 		}
-		$post = get_post();
+		// In a template (a Query Loop, the post content...) the block context names the post; otherwise the current post.
+		$context = ( is_object( $block ) && isset( $block->context ) && is_array( $block->context ) ) ? $block->context : array();
+		$post    = ( isset( $context['postId'] ) && is_numeric( $context['postId'] ) && (int) $context['postId'] > 0 ) ? get_post( (int) $context['postId'] ) : get_post();
 		if ( ! $post ) {
-			return '';
+			// Editing a template there is no post: say what the block will do, instead of showing nothing.
+			return $editing ? self::hint( __( 'In a template, this block shows the observations of the period of each post when the page is displayed. The preview is only available when editing a post.', 'wp-inaturalist' ) ) : '';
 		}
 		$attributes = is_array( $attributes ) ? $attributes : array();
 		try {

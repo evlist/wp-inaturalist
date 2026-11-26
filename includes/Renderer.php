@@ -90,7 +90,7 @@ final class Renderer {
 			$items .= self::entry( $group, isset( $taxa[ $group['taxon_id'] ] ) ? $taxa[ $group['taxon_id'] ] : null );
 		}
 		return '<div class="wpinat-observations"><p class="wpinat-intro">'
-			. esc_html__( 'We observed the following species on iNaturalist:', 'wp-inaturalist' )
+			. esc_html__( 'We identified the following species with iNaturalist:', 'wp-inaturalist' )
 			. '</p><ul class="wpinat-list">' . $items . '</ul></div>';
 	}
 

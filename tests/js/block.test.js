@@ -10,9 +10,9 @@ const vm = require( 'node:vm' );
 
 const source = fs.readFileSync( path.join( __dirname, '..', '..', 'blocks', 'wp-inaturalist', 'index.js' ), 'utf8' );
 
-const STRINGS = { period: 'Period', number: 'Number', unit: 'Unit', day: 'Days', week: 'Weeks', month: 'Months', help: 'Help', empty_html: 'Nothing yet.' };
+const STRINGS = { error: 'Preview error.', period: 'Period', number: 'Number', unit: 'Unit', day: 'Days', week: 'Weeks', month: 'Months', help: 'Help', empty_html: 'Nothing yet.' };
 
-function load( { config = { strings: STRINGS }, omit = null } = {} ) {
+function load( { config = { strings: STRINGS }, omit = null, currentId = 42 } = {} ) {
 	const registered = [];
 	const names = { InspectorControls: 'IC', PanelBody: 'PB', TextControl: 'TC', SelectControl: 'SC' };
 	const wp = {
@@ -21,7 +21,7 @@ function load( { config = { strings: STRINGS }, omit = null } = {} ) {
 		blockEditor: { InspectorControls: names.InspectorControls, useBlockProps: () => ( { className: 'bp' } ) },
 		components: { PanelBody: names.PanelBody, TextControl: names.TextControl, SelectControl: names.SelectControl },
 		serverSideRender: 'SSR',
-		data: { select: () => ( { getCurrentPostId: () => 42 } ) },
+		data: { select: () => ( { getCurrentPostId: () => currentId } ) },
 	};
 	if ( omit ) {
 		delete wp[ omit ];
@@ -41,9 +41,9 @@ function find( node, type, out = [] ) {
 	return out;
 }
 
-function render( attributes = { periodNumber: 1, periodUnit: 'day' } ) {
+function render( attributes = { periodNumber: 1, periodUnit: 'day' }, options = {} ) {
 	const calls = [];
-	const [ block ] = load();
+	const [ block ] = load( options );
 	const tree = block.settings.edit( { attributes, setAttributes: ( a ) => calls.push( a ) } );
 	return { block, tree, calls };
 }
@@ -65,6 +65,27 @@ test( 'the preview is server-side rendered for the post being edited', () => {
 	assert.equal( ssr.props.attributes.periodNumber, 3 );
 	assert.equal( ssr.props.urlQueryArgs.post_id, 42 );
 	assert.equal( ssr.props.EmptyResponsePlaceholder().children[ 0 ], 'Nothing yet.' );
+} );
+
+test( 'in the Site Editor the id is the text of a template: no post_id is sent (the route only accepts integers)', () => {
+	for ( const id of [ 'twentytwentyfive//single', '42', 0, -3, 1.5, NaN, null ] ) {
+		const { tree } = render( undefined, { currentId: id } );
+		const [ ssr ] = find( tree, 'SSR' );
+		same( ssr.props.urlQueryArgs, {} );
+	}
+	const [ ssr ] = find( render( undefined, { currentId: 7 } ).tree, 'SSR' );
+	same( ssr.props.urlQueryArgs, { post_id: 7 } );
+} );
+
+test( 'an error of the route is shown as readable text, never as [object Object]', () => {
+	const { tree } = render();
+	const [ ssr ] = find( tree, 'SSR' );
+	const shown = ( props ) => ssr.props.ErrorResponsePlaceholder( props ).children[ 0 ];
+	assert.equal( shown( { response: { error: true, errorMsg: 'Invalid parameter(s): post_id' } } ), 'Preview error. (Invalid parameter(s): post_id)' );
+	assert.equal( shown( { response: { error: true } } ), 'Preview error.' );
+	assert.equal( shown( { response: { errorMsg: { nested: 'object' } } } ), 'Preview error.' );
+	assert.equal( shown( undefined ), 'Preview error.' );
+	assert.doesNotMatch( shown( { response: { errorMsg: { a: 1 } } } ), /object/i );
 } );
 
 test( 'the number control clamps what is typed to 1..100', () => {

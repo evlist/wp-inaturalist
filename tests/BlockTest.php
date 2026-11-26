@@ -189,4 +189,54 @@ final class BlockTest extends TestCase {
 			$this->assertStringNotContainsString( 'INSERT', $sql );
 		}
 	}
+
+	public function test_in_a_template_the_post_of_the_block_context_is_used() {
+		$GLOBALS['wpinat_test']['current_post'] = null;
+		$GLOBALS['wpinat_test']['posts'][77]    = (object) array(
+			'ID'           => 77,
+			'post_date'    => '2026-11-19 09:00:00',
+			'post_content' => '',
+			'post_type'    => 'post',
+		);
+		$block                                  = (object) array( 'context' => array( 'postId' => 77 ) );
+		$html                                   = Block::render( array(), '', $block );
+		$this->assertStringContainsString( 'Species 2', $html, 'the observation of the 19th, the date of post 77' );
+		$this->assertStringNotContainsString( 'Species 3', $html );
+	}
+
+	public function test_a_context_without_a_usable_post_falls_back_to_the_current_post() {
+		foreach ( array( array(), array( 'postId' => 0 ), array( 'postId' => 'abc' ), array( 'postId' => null ) ) as $context ) {
+			$html = Block::render( array(), '', (object) array( 'context' => $context ) );
+			$this->assertStringContainsString( 'Species 3', $html, json_encode( $context ) );
+		}
+		$this->assertStringContainsString( 'Species 3', Block::render( array(), '', 'not an object' ) );
+	}
+
+	public function test_in_a_template_on_the_site_without_any_post_nothing_is_printed() {
+		$GLOBALS['wpinat_test']['current_post'] = null;
+		$this->assertSame( '', Block::render( array(), '', (object) array( 'context' => array() ) ) );
+	}
+
+	/**
+	 * REST_REQUEST is a constant: this test defines it in its own PHP process.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_in_the_editor_a_template_has_no_post_and_the_preview_explains_it() {
+		define( 'REST_REQUEST', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- WordPress's own constant.
+		$GLOBALS['wpinat_test']['current_post'] = null;
+		$html                                   = Block::render();
+		$this->assertStringContainsString( 'In a template, this block shows the observations of the period of each post', $html );
+		$this->assertStringContainsString( 'wpinat-hint', $html );
+	}
+
+	public function test_the_block_declares_that_it_uses_the_post_context() {
+		$json = json_decode( file_get_contents( WPINAT_DIR . 'blocks/wp-inaturalist/block.json' ), true );
+		$this->assertContains( 'postId', $json['usesContext'] );
+	}
+
+	public function test_the_editor_strings_include_the_error_text() {
+		$this->assertArrayHasKey( 'error', Block::editorStrings() );
+	}
 }

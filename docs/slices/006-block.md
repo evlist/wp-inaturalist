@@ -77,3 +77,19 @@ only reads the cache.
   through `wp.serverSideRender` and the block renderer route (does it pass `post_id` the way this script sends it?), the
   sidebar controls, the style, the French strings on screen, and the real look of the grid. Block variations of WordPress
   versions before 6.6 are untested too.
+
+## Corrections after the first uses on Eric's test site (2026-11-26)
+
+- **Wording**: the list said "We observed the following species on iNaturalist"; the species are not observed *on* iNaturalist but
+  identified with it. It now says "We identified the following species with iNaturalist:" (French: "Nous avons identifié les
+  espèces suivantes grâce à iNaturalist :"), close to wp-whobird's sentence.
+- **Block inserted in a theme template (Site Editor)** showed "Erreur de chargement du bloc : [object Object]". Probable cause
+  (**a deduction, not reproduced in a real Site Editor**): the editor script sent `post_id` = the id of the edited entity; in a
+  template that id is text (`theme//single`) and the block renderer route only accepts an integer, so it answered an error that
+  the default placeholder prints as `[object Object]`. Changes: `post_id` is sent only when it is a positive integer; an error
+  placeholder prints a readable text (with the message of the route when it is a string); the block declares `usesContext:
+  ["postId"]` and uses the post of its context when there is one (a Query Loop, the post content), else the current post; and
+  in the editor, with no post, the preview says what the block will do on the site instead of staying empty. On the site, without
+  any post, nothing is printed, as before.
+- Tests: 340 PHP and 29 JavaScript. One of the new JavaScript guards (`typeof` and `isFinite` on the id) is redundant with the two
+  checks after it and is kept as documentation.

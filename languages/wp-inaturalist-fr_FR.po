@@ -13,7 +13,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-25T15:20:44+00:00\n"
+"POT-Creation-Date: 2026-11-26T09:19:44+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-inaturalist\n"
@@ -90,7 +90,7 @@ msgid "This post has no iNaturalist block yet: add one and save the post."
 msgstr "Cet article n'a pas encore de bloc iNaturalist : ajoutez-en un et enregistrez l'article."
 
 #: includes/Assets.php:76
-#: includes/Block.php:69
+#: includes/Block.php:70
 #: includes/ToolsPage.php:50
 msgid "Set the iNaturalist login in the settings first."
 msgstr "Renseignez d'abord l'identifiant iNaturalist dans les réglages."
@@ -135,7 +135,15 @@ msgstr "La période se termine à la date de l'article."
 msgid "Nothing to show yet."
 msgstr "Rien à afficher pour l'instant."
 
-#: includes/Block.php:88
+#: includes/Block.php:54
+msgid "The preview could not be loaded."
+msgstr "L'aperçu n'a pas pu être chargé."
+
+#: includes/Block.php:77
+msgid "In a template, this block shows the observations of the period of each post when the page is displayed. The preview is only available when editing a post."
+msgstr "Dans un modèle, ce bloc affiche les observations de la période de chaque article quand la page est affichée. L'aperçu n'est disponible que lors de la modification d'un article."
+
+#: includes/Block.php:93
 msgid "No observation in the cache for this period. Save the post, then use \"Refresh observations\" in the sidebar."
 msgstr "Aucune observation dans le cache pour cette période. Enregistrez l'article, puis utilisez « Rafraîchir les observations » dans la barre latérale."
 
@@ -147,9 +155,9 @@ msgstr "Observation iNaturalist"
 msgid "Number or address of the observation: this photo is then the one shown for it. Applied at the next refresh of its period."
 msgstr "Numéro ou adresse de l'observation : cette photo est alors celle affichée pour elle. Pris en compte au prochain rafraîchissement de sa période."
 
-#: includes/Renderer.php:92
-msgid "We observed the following species on iNaturalist:"
-msgstr "Nous avons observé les espèces suivantes sur iNaturalist :"
+#: includes/Renderer.php:93
+msgid "We identified the following species with iNaturalist:"
+msgstr "Nous avons identifié les espèces suivantes grâce à iNaturalist :"
 
 #: includes/SettingsPage.php:75
 msgid "Observations"

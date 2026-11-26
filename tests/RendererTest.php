@@ -108,7 +108,7 @@ final class RendererTest extends TestCase {
 
 	public function test_an_entry_has_photo_credit_name_and_latin_name() {
 		$html = Renderer::html( array( $this->row() ) );
-		$this->assertStringContainsString( 'We observed the following species on iNaturalist:', $html );
+		$this->assertStringContainsString( 'We identified the following species with iNaturalist:', $html );
 		$this->assertStringContainsString( 'data-taxon-id="14886"', $html );
 		$this->assertStringContainsString( '<a href="https://www.inaturalist.org/observations/1"><img src="https://inaturalist-open-data.s3.amazonaws.com/photos/9/medium.jpg" alt="moqueur polyglotte" loading="lazy" /></a>', $html );
 		$this->assertStringContainsString( '<figcaption class="wpinat-credit">(c) Jean, some rights reserved (CC BY-NC)</figcaption>', $html );

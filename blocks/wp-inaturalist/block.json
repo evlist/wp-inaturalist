@@ -11,6 +11,7 @@
 		"html": false
 	},
 	"textdomain": "wp-inaturalist",
+	"usesContext": [ "postId" ],
 	"editorScript": "wpinat-block-editor",
 	"style": "file:./style.css",
 	"attributes": {
