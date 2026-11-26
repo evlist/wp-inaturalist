@@ -29,6 +29,7 @@ final class ToolsPage {
 	const ACTION_STOP   = 'wpinat_job_stop';
 	const ACTION_RESUME = 'wpinat_job_resume';
 	const ACTION_CLEAR  = 'wpinat_cache_clear';
+	const ACTION_LOAD   = 'wpinat_load_all';
 
 	/**
 	 * Adds the page under Tools.
@@ -45,6 +46,10 @@ final class ToolsPage {
 	public static function notices(): array {
 		return array(
 			'started'       => array( 'success', __( 'The refresh was started.', 'wp-inaturalist' ) ),
+			'loading_all'   => array( 'success', __( 'Loading all your observations has started. It runs in the background: reload this page to follow it.', 'wp-inaturalist' ) ),
+			'nothing_found' => array( 'warning', __( 'iNaturalist has no public observation for this login. Check the login in the settings.', 'wp-inaturalist' ) ),
+			'too_many'      => array( 'warning', __( 'This account has a very large number of observations: nothing was started. Choose a first day below and refresh those days instead.', 'wp-inaturalist' ) ),
+			'unavailable'   => array( 'error', __( 'iNaturalist did not answer: try again later.', 'wp-inaturalist' ) ),
 			'queued'        => array( 'success', __( 'A refresh is running: this one will start when it ends.', 'wp-inaturalist' ) ),
 			'busy'          => array( 'warning', __( 'A refresh is already running.', 'wp-inaturalist' ) ),
 			'no_login'      => array( 'error', __( 'Set the iNaturalist login in the settings first.', 'wp-inaturalist' ) ),
@@ -78,6 +83,7 @@ final class ToolsPage {
 		}
 
 		self::renderStatus( $state );
+		self::renderSync();
 		self::renderPhotos();
 		self::renderControls( $state );
 		self::renderLog( $log->entries() );
@@ -147,6 +153,34 @@ final class ToolsPage {
 			echo '</form> ';
 		}
 		echo '</p>';
+	}
+
+	/**
+	 * What is known about the account and the last loads and synchronisations, and the button to load everything.
+	 */
+	private static function renderSync(): void {
+		$sync  = SyncState::get();
+		$probe = $sync['probe'];
+		$when  = static function ( $ts ) {
+			return $ts ? wp_date( 'Y-m-d H:i:s', (int) $ts ) : __( 'never', 'wp-inaturalist' );
+		};
+		$rows  = array(
+			__( 'Account check', 'wp-inaturalist' )        => isset( $probe['total'] ) ? sprintf( /* translators: 1: number of observations, 2: date of the first one, 3: time of the check. */ __( '%1$d observations, from %2$s (checked %3$s)', 'wp-inaturalist' ), (int) $probe['total'], isset( $probe['first'] ) && $probe['first'] ? $probe['first'] : '-', $when( isset( $probe['at'] ) ? $probe['at'] : 0 ) ) : __( 'not done yet', 'wp-inaturalist' ),
+			__( 'Full load', 'wp-inaturalist' )            => SyncState::isLoaded( Config::getLogin() ) ? $when( $sync['full_at'] ) : __( 'not done for this login', 'wp-inaturalist' ),
+			__( 'Last synchronisation', 'wp-inaturalist' ) => $when( $sync['sync_at'] ),
+			__( 'Last reconciliation', 'wp-inaturalist' )  => $when( $sync['reconcile_at'] ),
+		);
+		echo '<h2>' . esc_html__( 'Loading and synchronisation', 'wp-inaturalist' ) . '</h2><table class="widefat striped"><tbody>';
+		foreach ( $rows as $label => $value ) {
+			printf( '<tr><th scope="row">%1$s</th><td>%2$s</td></tr>', esc_html( $label ), esc_html( $value ) );
+		}
+		echo '</tbody></table>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		echo '<input type="hidden" name="action" value="' . esc_attr( self::ACTION_LOAD ) . '" />';
+		wp_nonce_field( self::ACTION_LOAD );
+		echo '<p>';
+		submit_button( __( 'Load all my observations', 'wp-inaturalist' ), 'secondary', 'submit', false );
+		echo ' ' . esc_html__( 'Asks iNaturalist for the number of observations, then loads them in the background.', 'wp-inaturalist' ) . '</p></form>';
 	}
 
 	/**
@@ -278,6 +312,49 @@ final class ToolsPage {
 	}
 
 	/**
+	 * Checks the account (number of observations, first day) and starts loading all of them, from the first one to today.
+	 *
+	 * More than {@see Config::MAX_AUTO_LOAD} observations: nothing is started. Another account's observations are removed first.
+	 *
+	 * @param object|null $client Client with summary() (tests).
+	 * @param Job|null    $job    Job (tests).
+	 * @param Cache|null  $cache  Cache (tests).
+	 * @return string Notice code.
+	 */
+	public static function handleLoadAll( $client = null, ?Job $job = null, ?Cache $cache = null ): string {
+		self::guard( self::ACTION_LOAD );
+		global $wpdb;
+		$login = Config::getLogin();
+		if ( '' === $login ) {
+			return 'no_login';
+		}
+		$client = $client ? $client : new INatClient( new Throttle() );
+		$now    = time();
+		try {
+			$summary = $client->summary( $login, Config::getQuality() );
+		} catch ( INatException $e ) {
+			return 'unavailable';
+		}
+		SyncState::recordProbe( $login, $summary['total'], $summary['first'], $now );
+		if ( 0 === $summary['total'] || null === $summary['first'] ) {
+			SyncState::fullLoadDone( $login, $now, null ); // Nothing to load: the offer is closed; the daily synchronisation catches new observations.
+			return 'nothing_found';
+		}
+		if ( $summary['total'] > Config::MAX_AUTO_LOAD ) {
+			return 'too_many';
+		}
+		if ( SyncState::get()['login'] !== $login ) {
+			try {
+				( $cache ? $cache : new Cache( $wpdb ) )->deleteOtherAccounts( $login );
+			} catch ( \RuntimeException $e ) {
+				return 'unavailable';
+			}
+		}
+		( new JobLog() )->add( 'info', sprintf( 'Loading all observations: %d found on iNaturalist, from %s.', $summary['total'], $summary['first'] ) );
+		return ( $job ? $job : Scheduler::job() )->request( $summary['first'], wp_date( 'Y-m-d' ), 'initial' );
+	}
+
+	/**
 	 * Redirects to the page with a notice code, then ends the request.
 	 *
 	 * @param string $code Notice code.
@@ -315,6 +392,13 @@ final class ToolsPage {
 	 */
 	public static function onResume(): void {
 		self::redirect( self::handleResume() );
+	}
+
+	/**
+	 * Hook callback of admin-post.php?action=wpinat_load_all.
+	 */
+	public static function onLoadAll(): void {
+		self::redirect( self::handleLoadAll() );
 	}
 
 	/**

@@ -99,11 +99,21 @@ final class PhotoLinker {
 	 * @return int Number of observations linked.
 	 */
 	public function linkRange( string $login, string $from, string $to ): int {
+		return $this->linkRows( $this->cache->getBetween( $login, $from, $to ) );
+	}
+
+	/**
+	 * Links the given cached rows that will be shown (a taxon and a photo). Does nothing when the setting is off.
+	 *
+	 * @param array<int,array<string,mixed>> $rows Rows of the cache.
+	 * @return int Number of observations linked.
+	 */
+	public function linkRows( array $rows ): int {
 		if ( ! Config::getUseMediaLibrary() ) {
 			return 0;
 		}
 		$linked = 0;
-		foreach ( $this->cache->getBetween( $login, $from, $to ) as $row ) {
+		foreach ( $rows as $row ) {
 			if ( empty( $row['taxon_id'] ) || ! self::hasPhoto( $row ) ) {
 				continue;
 			}

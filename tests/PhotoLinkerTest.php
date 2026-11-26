@@ -237,4 +237,32 @@ final class PhotoLinkerTest extends TestCase {
 		}
 		$this->assertFalse( PhotoLinker::hasPhoto( array() ) );
 	}
+
+	public function test_link_rows_links_only_the_given_rows() {
+		$this->store( 1, '2026-11-20T09:00:00+01:00' );
+		$this->store( 2, '2026-11-20T10:00:00+01:00' );
+		$this->index->candidates[ gmmktime( 9, 0, 0, 11, 20, 2026 ) ]  = array(
+			array(
+				'id'   => 100,
+				'diff' => 0,
+			),
+		);
+		$this->index->candidates[ gmmktime( 10, 0, 0, 11, 20, 2026 ) ] = array(
+			array(
+				'id'   => 101,
+				'diff' => 0,
+			),
+		);
+		$cache = new Cache( $GLOBALS['wpdb'] );
+		$this->assertSame( 1, $this->linker()->linkRows( $cache->getByIds( array( 2 ) ) ) );
+		$this->assertArrayNotHasKey( 'attachment_id', $GLOBALS['wpdb']->rows[1] );
+		$this->assertSame( 101, $GLOBALS['wpdb']->rows[2]['attachment_id'] );
+	}
+
+	public function test_link_rows_does_nothing_when_the_option_is_off() {
+		update_option( Config::USE_MEDIA, 0 );
+		$this->store( 1, '2026-11-20T09:00:00+01:00' );
+		$this->assertSame( 0, $this->linker()->linkRows( ( new Cache( $GLOBALS['wpdb'] ) )->getByIds( array( 1 ) ) ) );
+		$this->assertSame( array(), $this->index->asked );
+	}
 }

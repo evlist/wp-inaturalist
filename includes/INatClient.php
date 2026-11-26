@@ -68,12 +68,13 @@ final class INatClient {
 	 * Options: "locale" (language of the common names), "quality" ("research" or "any"), "per_page" (up to 200) and
 	 * "max_pages" (default 20; reaching it with results left raises a TRUNCATED error instead of returning a partial list).
 	 *
+	 * Any failure of the service is raised as an {@see INatException} (not repeated as a tag: it is thrown by the helpers).
+	 *
 	 * @param string             $login   iNaturalist login.
 	 * @param \DateTimeInterface $from    First day.
 	 * @param \DateTimeInterface $to      Last day.
 	 * @param array              $options See above.
 	 * @return Observation[]
-	 * @throws INatException On any failure.
 	 * @throws \InvalidArgumentException When the login is not valid.
 	 */
 	public function fetchObservations( string $login, \DateTimeInterface $from, \DateTimeInterface $to, array $options = array() ): array {
@@ -99,6 +100,91 @@ final class INatClient {
 			$params['quality_grade'] = 'research';
 		}
 
+		return $this->collect( $params, $max_pages );
+	}
+
+	/**
+	 * The observations of a user updated since a moment, whatever their date, oldest id first.
+	 *
+	 * The quality filter is deliberately not sent: an observation that stopped being "research grade" must come back, so that the
+	 * caller can remove it from its cache. Options: "locale", "per_page" and "max_pages" (as {@see INatClient::fetchObservations()}).
+	 *
+	 * Any failure of the service is raised as an {@see INatException} (not repeated as a tag: it is thrown by the helpers).
+	 *
+	 * @param string             $login   iNaturalist login.
+	 * @param \DateTimeInterface $since   Moment (an observation updated at or after it is returned).
+	 * @param array              $options See above.
+	 * @return Observation[]
+	 * @throws \InvalidArgumentException When the login is not valid.
+	 */
+	public function fetchUpdated( string $login, \DateTimeInterface $since, array $options = array() ): array {
+		if ( ! Config::isValidLogin( $login ) ) {
+			throw new \InvalidArgumentException( 'Invalid iNaturalist login.' );
+		}
+		$params = array(
+			'user_login'    => $login,
+			'updated_since' => ( new \DateTimeImmutable( '@' . $since->getTimestamp() ) )->format( 'Y-m-d\TH:i:s' ) . '+00:00',
+			'per_page'      => isset( $options['per_page'] ) ? max( 1, min( self::PER_PAGE_MAX, (int) $options['per_page'] ) ) : self::PER_PAGE_MAX,
+			'order_by'      => 'id',
+			'order'         => 'asc',
+			'fields'        => self::FIELDS,
+		);
+		if ( ! empty( $options['locale'] ) ) {
+			$params['locale'] = (string) $options['locale'];
+		}
+		return $this->collect( $params, isset( $options['max_pages'] ) ? max( 1, (int) $options['max_pages'] ) : 20 );
+	}
+
+	/**
+	 * What an account holds: the number of its public observations and the date of the oldest one. Two small requests.
+	 *
+	 * Any failure of the service is raised as an {@see INatException} (not repeated as a tag: it is thrown by the helpers).
+	 *
+	 * @param string $login   iNaturalist login.
+	 * @param string $quality "research" or "any" (the same filter as the observations that will be loaded).
+	 * @return array{total:int,first:?string}
+	 * @throws \InvalidArgumentException When the login is not valid.
+	 */
+	public function summary( string $login, string $quality = Config::QUALITY_ANY ): array {
+		if ( ! Config::isValidLogin( $login ) ) {
+			throw new \InvalidArgumentException( 'Invalid iNaturalist login.' );
+		}
+		$params = array(
+			'user_login' => $login,
+			'per_page'   => 0,
+			'fields'     => '(id:!t)',
+		);
+		if ( Config::QUALITY_RESEARCH === $quality ) {
+			$params['quality_grade'] = 'research';
+		}
+		$total = $this->request( $params )['total_results'];
+		if ( 0 === $total ) {
+			return array(
+				'total' => 0,
+				'first' => null,
+			);
+		}
+		$params['per_page'] = 1;
+		$params['order_by'] = 'observed_on';
+		$params['order']    = 'asc';
+		$params['fields']   = '(id:!t,observed_on:!t)';
+		$first              = $this->request( $params )['results'];
+		$date               = ( isset( $first[0]['observed_on'] ) && is_string( $first[0]['observed_on'] ) && 1 === preg_match( '/^\d{4}-\d{2}-\d{2}$/', $first[0]['observed_on'] ) ) ? $first[0]['observed_on'] : null;
+		return array(
+			'total' => $total,
+			'first' => $date,
+		);
+	}
+
+	/**
+	 * Follows the pages of a query and builds the observations.
+	 *
+	 * @param array $params    Query parameters (without "page").
+	 * @param int   $max_pages Page limit: reaching it with results left raises a "truncated" error, never a partial list.
+	 * @return Observation[]
+	 * @throws INatException On any failure.
+	 */
+	private function collect( array $params, int $max_pages ): array {
 		$observations = array();
 		for ( $page = 1; $page <= $max_pages; $page++ ) {
 			$params['page'] = $page;

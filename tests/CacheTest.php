@@ -129,4 +129,52 @@ final class CacheTest extends TestCase {
 		$c->replaceRange( 'other', '2026-11-01', '2026-11-30', array( $this->observation( 9, '2026-11-25' ) ), 'fr', 1 );
 		$this->assertSame( array( 2, 3 ), array_map( 'intval', array_column( $c->latest( 'me', 2 ), 'observation_id' ) ) );
 	}
+
+	public function test_upsert_many_inserts_and_updates_without_removing_anything() {
+		$c = $this->cache();
+		$c->replaceRange( 'me', '2026-11-01', '2026-11-30', array( $this->observation( 1, '2026-11-05' ), $this->observation( 2, '2026-11-06' ) ), 'fr', 1 );
+		$changed             = $this->observation( 1, '2026-11-05' );
+		$changed->commonName = 'autre';
+		$c->upsertMany( 'me', array( $changed, $this->observation( 3, '2020-01-01' ) ), 'fr', 2 );
+		$this->assertSame( array( 1, 2, 3 ), array_keys( $GLOBALS['wpdb']->rows ) );
+		$this->assertSame( 'autre', $GLOBALS['wpdb']->rows[1]['common_name'] );
+	}
+
+	public function test_upsert_many_reports_a_refused_write() {
+		$GLOBALS['wpdb']->fail_replace = true;
+		$this->expectException( \RuntimeException::class );
+		$this->cache()->upsertMany( 'me', array( $this->observation( 1 ) ), 'fr', 1 );
+	}
+
+	public function test_delete_ids_only_takes_positive_integers() {
+		$c = $this->cache();
+		$c->upsertMany( 'me', array( $this->observation( 1 ), $this->observation( 2 ), $this->observation( 3 ) ), 'fr', 1 );
+		$c->deleteIds( array( 2, '3 OR 1=1', -4, 0, 'x' ) );
+		$this->assertSame( array( 1 ), array_keys( $GLOBALS['wpdb']->rows ) );
+		$this->assertStringContainsString( 'observation_id IN (2,3)', end( $GLOBALS['wpdb']->queries ) );
+		$before = count( $GLOBALS['wpdb']->queries );
+		$c->deleteIds( array() );
+		$c->deleteIds( array( 0, -1 ) );
+		$this->assertCount( $before, $GLOBALS['wpdb']->queries, 'nothing to delete: no query' );
+	}
+
+	public function test_delete_other_accounts_keeps_only_the_given_login() {
+		$c = $this->cache();
+		$c->replaceRange( 'me', '2026-11-01', '2026-11-30', array( $this->observation( 1 ) ), 'fr', 1 );
+		$c->replaceRange( 'old', '2026-11-01', '2026-11-30', array( $this->observation( 2 ) ), 'fr', 1 );
+		$c->replaceRange( "x' OR '1'='1", '2026-11-01', '2026-11-30', array( $this->observation( 3 ) ), 'fr', 1 );
+		$c->deleteOtherAccounts( 'me' );
+		$this->assertSame( array( 1 ), array_keys( $GLOBALS['wpdb']->rows ) );
+		$c->deleteOtherAccounts( "x' OR '1'='1" );
+		$this->assertSame( array(), $GLOBALS['wpdb']->rows );
+		$this->assertStringContainsString( "user_login <> 'x\\' OR \\'1\\'=\\'1'", end( $GLOBALS['wpdb']->queries ), 'the login goes through prepare' );
+	}
+
+	public function test_get_by_ids_returns_those_rows_oldest_first() {
+		$c = $this->cache();
+		$c->upsertMany( 'me', array( $this->observation( 1, '2026-11-09' ), $this->observation( 2, '2026-11-05' ), $this->observation( 3, '2026-11-01' ) ), 'fr', 1 );
+		$this->assertSame( array( 2, 1 ), array_map( 'intval', array_column( $c->getByIds( array( 1, 2, '2 OR 1', -5 ) ), 'observation_id' ) ) );
+		$this->assertSame( array(), $c->getByIds( array() ) );
+		$this->assertSame( array(), $c->getByIds( array( 0, -1, 'x' ) ) );
+	}
 }

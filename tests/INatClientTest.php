@@ -314,4 +314,101 @@ final class INatClientTest extends TestCase {
 		}
 		$this->fail( 'expected an INatException' );
 	}
+
+	public function test_updated_observations_are_asked_since_a_moment_in_utc_without_the_quality_filter() {
+		$list = $this->client( array( $this->ok( $this->fixture( 'observations-page.json' ) ) ) )->fetchUpdated(
+			'someone',
+			new \DateTimeImmutable( '2026-11-24 12:00:00', new \DateTimeZone( 'Europe/Paris' ) ),
+			array(
+				'locale'  => 'fr',
+				'quality' => 'research',
+			)
+		);
+		$this->assertCount( 1, $list );
+		$q = $this->query();
+		$this->assertSame( '2026-11-24T11:00:00+00:00', $q['updated_since'] );
+		$this->assertSame( 'id', $q['order_by'] );
+		$this->assertSame( 'asc', $q['order'] );
+		$this->assertSame( 'fr', $q['locale'] );
+		$this->assertArrayNotHasKey( 'quality_grade', $q, 'a downgraded observation must come back' );
+		$this->assertArrayNotHasKey( 'd1', $q );
+		$this->assertArrayNotHasKey( 'd2', $q );
+		$this->assertSame( INatClient::FIELDS, $q['fields'] );
+	}
+
+	public function test_updated_observations_follow_the_pages_and_never_return_a_partial_list() {
+		$one                  = json_decode( $this->fixture( 'observations-page.json' ), true );
+		$one['total_results'] = 5;
+		$client               = $this->client( array( $this->ok( json_encode( $one ) ) ) );
+		try {
+			$client->fetchUpdated( 'someone', new \DateTimeImmutable( 'now' ), array( 'max_pages' => 1 ) );
+			$this->fail( 'expected an exception' );
+		} catch ( INatException $e ) {
+			$this->assertSame( INatException::TRUNCATED, $e->kind );
+		}
+	}
+
+	public function test_updated_refuses_an_invalid_login() {
+		$this->expectException( \InvalidArgumentException::class );
+		$this->client( array() )->fetchUpdated( '../x', new \DateTimeImmutable( 'now' ) );
+	}
+
+	public function test_summary_gives_the_number_and_the_first_day_in_two_small_requests() {
+		$client  = $this->client( array( $this->ok( '{"total_results":860,"page":1,"per_page":0,"results":[]}' ), $this->ok( '{"total_results":860,"page":1,"per_page":1,"results":[{"id":5,"observed_on":"2019-02-01"}]}' ) ) );
+		$summary = $client->summary( 'someone', 'research' );
+		$this->assertSame(
+			array(
+				'total' => 860,
+				'first' => '2019-02-01',
+			),
+			$summary
+		);
+		$this->assertCount( 2, $this->requests );
+		$first = $this->query( 0 );
+		$this->assertSame( '0', $first['per_page'] );
+		$this->assertSame( 'research', $first['quality_grade'], 'the same filter as the load' );
+		$this->assertSame( '(id:!t)', $first['fields'], 'only ids: the smallest possible answer' );
+		$second = $this->query( 1 );
+		$this->assertSame( '1', $second['per_page'] );
+		$this->assertSame( 'observed_on', $second['order_by'] );
+		$this->assertSame( 'asc', $second['order'] );
+	}
+
+	public function test_summary_of_an_empty_account_needs_one_request() {
+		$summary = $this->client( array( $this->ok( '{"total_results":0,"page":1,"per_page":0,"results":[]}' ) ) )->summary( 'someone' );
+		$this->assertSame(
+			array(
+				'total' => 0,
+				'first' => null,
+			),
+			$summary
+		);
+		$this->assertCount( 1, $this->requests );
+		$this->assertArrayNotHasKey( 'quality_grade', $this->query( 0 ), 'any grade by default' );
+	}
+
+	public function test_summary_ignores_a_first_day_that_is_not_a_date() {
+		foreach ( array( '"observed_on":"yesterday"', '"observed_on":null', '"x":1' ) as $field ) {
+			$client = $this->client( array( $this->ok( '{"total_results":3,"results":[]}' ), $this->ok( '{"total_results":3,"results":[{"id":5,' . $field . '}]}' ) ) );
+			$this->assertNull( $client->summary( 'someone' )['first'], $field );
+		}
+	}
+
+	public function test_summary_errors_are_typed_and_the_login_is_checked() {
+		try {
+			$this->client(
+				array(
+					array(
+						'response' => array( 'code' => 503 ),
+						'body'     => '',
+					),
+				)
+			)->summary( 'someone' );
+			$this->fail( 'expected an exception' );
+		} catch ( INatException $e ) {
+			$this->assertSame( INatException::SERVER, $e->kind );
+		}
+		$this->expectException( \InvalidArgumentException::class );
+		$this->client( array() )->summary( 'a b' );
+	}
 }

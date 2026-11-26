@@ -43,6 +43,8 @@ final class Setup {
 		add_action( 'admin_post_' . ToolsPage::ACTION_STOP, array( ToolsPage::class, 'onStop' ), 10 );
 		add_action( 'admin_post_' . ToolsPage::ACTION_RESUME, array( ToolsPage::class, 'onResume' ), 10 );
 		add_action( 'admin_post_' . ToolsPage::ACTION_CLEAR, array( ToolsPage::class, 'onClear' ), 10 );
+		add_action( 'admin_post_' . ToolsPage::ACTION_LOAD, array( ToolsPage::class, 'onLoadAll' ), 10 );
+		add_action( 'admin_notices', array( Offer::class, 'render' ), 10 );
 		add_filter( 'attachment_fields_to_edit', array( MediaFields::class, 'addField' ), 10, 2 );
 		add_filter( 'attachment_fields_to_save', array( MediaFields::class, 'saveField' ), 10, 2 );
 		add_action( 'admin_menu', array( SettingsPage::class, 'addMenu' ), 10 );

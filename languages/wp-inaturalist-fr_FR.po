@@ -13,7 +13,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-26T09:23:20+00:00\n"
+"POT-Creation-Date: 2026-11-26T09:51:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-inaturalist\n"
@@ -52,6 +52,7 @@ msgid "This is not a valid login: use letters, digits, \"-\" and \"_\"."
 msgstr "Cet identifiant n'est pas valide : utilisez des lettres, des chiffres, « - » et « _ »."
 
 #: includes/Assets.php:58
+#: includes/ToolsPage.php:52
 msgid "iNaturalist did not answer: try again later."
 msgstr "iNaturalist n'a pas répondu : réessayez plus tard."
 
@@ -63,8 +64,8 @@ msgstr "La vérification n'a pas pu être faite."
 #: includes/SettingsPage.php:36
 #: includes/SettingsPage.php:37
 #: includes/SettingsPage.php:90
-#: includes/ToolsPage.php:37
-#: includes/ToolsPage.php:71
+#: includes/ToolsPage.php:38
+#: includes/ToolsPage.php:76
 msgid "iNaturalist"
 msgstr "iNaturalist"
 
@@ -81,7 +82,7 @@ msgid "The refresh of the observations of this post has started."
 msgstr "Le rafraîchissement des observations de cet article a démarré."
 
 #: includes/Assets.php:74
-#: includes/ToolsPage.php:48
+#: includes/ToolsPage.php:53
 msgid "A refresh is running: this one will start when it ends."
 msgstr "Un rafraîchissement est en cours : celui-ci démarrera quand il sera terminé."
 
@@ -91,7 +92,7 @@ msgstr "Cet article n'a pas encore de bloc iNaturalist : ajoutez-en un et enregi
 
 #: includes/Assets.php:76
 #: includes/Block.php:76
-#: includes/ToolsPage.php:50
+#: includes/ToolsPage.php:55
 msgid "Set the iNaturalist login in the settings first."
 msgstr "Renseignez d'abord l'identifiant iNaturalist dans les réglages."
 
@@ -104,6 +105,7 @@ msgid "The refresh could not be requested."
 msgstr "Le rafraîchissement n'a pas pu être demandé."
 
 #: includes/Block.php:46
+#: includes/Offer.php:46
 msgid "iNaturalist observations"
 msgstr "Observations iNaturalist"
 
@@ -176,6 +178,15 @@ msgstr "Observation iNaturalist"
 #: includes/MediaFields.php:59
 msgid "Number or address of the observation: this photo is then the one shown for it. Applied at the next refresh of its period."
 msgstr "Numéro ou adresse de l'observation : cette photo est alors celle affichée pour elle. Pris en compte au prochain rafraîchissement de sa période."
+
+#: includes/Offer.php:47
+msgid "No observation has been loaded for this iNaturalist login yet. Load them all so that every post can show them; it runs in the background."
+msgstr "Aucune observation n'a encore été chargée pour cet identifiant iNaturalist. Chargez-les toutes pour que chaque article puisse les afficher ; cela se fait en arrière-plan."
+
+#: includes/Offer.php:51
+#: includes/ToolsPage.php:182
+msgid "Load all my observations"
+msgstr "Charger toutes mes observations"
 
 #: includes/Renderer.php:93
 msgid "We identified the following species with iNaturalist:"
@@ -257,149 +268,206 @@ msgstr "Choix d'observations inconnu."
 msgid "The hour must be a whole number from 0 to 23."
 msgstr "L'heure doit être un nombre entier de 0 à 23."
 
-#: includes/ToolsPage.php:47
+#: includes/ToolsPage.php:48
 msgid "The refresh was started."
 msgstr "Le rafraîchissement a démarré."
 
 #: includes/ToolsPage.php:49
+msgid "Loading all your observations has started. It runs in the background: reload this page to follow it."
+msgstr "Le chargement de toutes vos observations a démarré. Il se fait en arrière-plan : rechargez cette page pour le suivre."
+
+#: includes/ToolsPage.php:50
+msgid "iNaturalist has no public observation for this login. Check the login in the settings."
+msgstr "iNaturalist n'a aucune observation publique pour cet identifiant. Vérifiez l'identifiant dans les réglages."
+
+#: includes/ToolsPage.php:51
+msgid "This account has a very large number of observations: nothing was started. Choose a first day below and refresh those days instead."
+msgstr "Ce compte a un très grand nombre d'observations : rien n'a été lancé. Choisissez un premier jour ci-dessous et rafraîchissez ces jours à la place."
+
+#: includes/ToolsPage.php:54
 msgid "A refresh is already running."
 msgstr "Un rafraîchissement est déjà en cours."
 
-#: includes/ToolsPage.php:51
+#: includes/ToolsPage.php:56
 msgid "The dates are not valid: use real days, the first not after the last, at most about ten years apart."
 msgstr "Les dates ne sont pas valides : indiquez de vraies dates, la première pas après la dernière, à dix ans d'écart au plus."
 
-#: includes/ToolsPage.php:52
+#: includes/ToolsPage.php:57
 msgid "The refresh was stopped."
 msgstr "Le rafraîchissement a été arrêté."
 
-#: includes/ToolsPage.php:53
+#: includes/ToolsPage.php:58
 msgid "No refresh is running."
 msgstr "Aucun rafraîchissement n'est en cours."
 
-#: includes/ToolsPage.php:54
+#: includes/ToolsPage.php:59
 msgid "The refresh was resumed."
 msgstr "Le rafraîchissement a repris."
 
-#: includes/ToolsPage.php:55
+#: includes/ToolsPage.php:60
 msgid "There is no stopped or failed refresh to resume."
 msgstr "Il n'y a aucun rafraîchissement arrêté ou en échec à reprendre."
 
-#: includes/ToolsPage.php:56
+#: includes/ToolsPage.php:61
 msgid "The cache was emptied."
 msgstr "Le cache a été vidé."
 
-#: includes/ToolsPage.php:65
+#: includes/ToolsPage.php:70
 msgid "You do not have permission to use this page."
 msgstr "Vous n'avez pas la permission d'utiliser cette page."
 
-#: includes/ToolsPage.php:96
+#: includes/ToolsPage.php:102
 msgid "Status"
 msgstr "État"
 
-#: includes/ToolsPage.php:97
+#: includes/ToolsPage.php:103
 msgid "Progress"
 msgstr "Progression"
 
-#: includes/ToolsPage.php:98
+#: includes/ToolsPage.php:104
 msgid "Observations fetched"
 msgstr "Observations récupérées"
 
-#: includes/ToolsPage.php:99
+#: includes/ToolsPage.php:105
 msgid "Observations in the cache"
 msgstr "Observations dans le cache"
 
-#: includes/ToolsPage.php:100
+#: includes/ToolsPage.php:106
 msgid "Started by"
 msgstr "Lancé par"
 
-#: includes/ToolsPage.php:101
+#: includes/ToolsPage.php:107
 msgid "Last change"
 msgstr "Dernière modification"
 
-#: includes/ToolsPage.php:102
+#: includes/ToolsPage.php:108
 msgid "Next daily refresh"
 msgstr "Prochain rafraîchissement quotidien"
 
-#: includes/ToolsPage.php:103
+#: includes/ToolsPage.php:109
 msgid "Last error"
 msgstr "Dernière erreur"
 
-#: includes/ToolsPage.php:105
+#: includes/ToolsPage.php:111
 msgid "Refresh"
 msgstr "Rafraîchissement"
 
-#: includes/ToolsPage.php:121
+#: includes/ToolsPage.php:127
 msgid "Actions"
 msgstr "Actions"
 
-#: includes/ToolsPage.php:128
+#: includes/ToolsPage.php:134
 msgid "From"
 msgstr "Du"
 
-#: includes/ToolsPage.php:130
+#: includes/ToolsPage.php:136
 msgid "to"
 msgstr "au"
 
-#: includes/ToolsPage.php:133
+#: includes/ToolsPage.php:139
 msgid "Refresh these days"
 msgstr "Rafraîchir ces jours"
 
-#: includes/ToolsPage.php:137
+#: includes/ToolsPage.php:143
 msgid "Stop"
 msgstr "Arrêter"
 
-#: includes/ToolsPage.php:138
+#: includes/ToolsPage.php:144
 msgid "Resume"
 msgstr "Reprendre"
 
-#: includes/ToolsPage.php:139
+#: includes/ToolsPage.php:145
 msgid "Empty the cache"
 msgstr "Vider le cache"
 
-#: includes/ToolsPage.php:160
+#: includes/ToolsPage.php:165
+msgid "never"
+msgstr "jamais"
+
+#: includes/ToolsPage.php:168
+msgid "Account check"
+msgstr "Vérification du compte"
+
+#. translators: 1: number of observations, 2: date of the first one, 3: time of the check.
+#: includes/ToolsPage.php:168
+#, php-format
+msgid "%1$d observations, from %2$s (checked %3$s)"
+msgstr "%1$d observations, à partir du %2$s (vérifié le %3$s)"
+
+#. translators: 1: number of observations, 2: date of the first one, 3: time of the check.
+#: includes/ToolsPage.php:168
+msgid "not done yet"
+msgstr "pas encore faite"
+
+#. translators: 1: number of observations, 2: date of the first one, 3: time of the check.
+#: includes/ToolsPage.php:169
+msgid "Full load"
+msgstr "Chargement complet"
+
+#. translators: 1: number of observations, 2: date of the first one, 3: time of the check.
+#: includes/ToolsPage.php:169
+msgid "not done for this login"
+msgstr "pas fait pour cet identifiant"
+
+#: includes/ToolsPage.php:170
+msgid "Last synchronisation"
+msgstr "Dernière synchronisation"
+
+#: includes/ToolsPage.php:171
+msgid "Last reconciliation"
+msgstr "Dernière réconciliation"
+
+#: includes/ToolsPage.php:173
+msgid "Loading and synchronisation"
+msgstr "Chargement et synchronisation"
+
+#: includes/ToolsPage.php:183
+msgid "Asks iNaturalist for the number of observations, then loads them in the background."
+msgstr "Demande à iNaturalist le nombre d'observations, puis les charge en arrière-plan."
+
+#: includes/ToolsPage.php:194
 msgid "Photos of the media library"
 msgstr "Photos de la médiathèque"
 
-#: includes/ToolsPage.php:162
+#: includes/ToolsPage.php:196
 msgid "This option is off in the settings: the photos of iNaturalist are used."
 msgstr "Cette option est désactivée dans les réglages : les photos d'iNaturalist sont utilisées."
 
-#: includes/ToolsPage.php:167
+#: includes/ToolsPage.php:201
 msgid "No cached observation with a photo yet."
 msgstr "Aucune observation avec photo dans le cache pour l'instant."
 
-#: includes/ToolsPage.php:171
+#: includes/ToolsPage.php:205
 msgid "Linked by hand"
 msgstr "Liée à la main"
 
-#: includes/ToolsPage.php:172
+#: includes/ToolsPage.php:206
 msgid "Matched by the time of the shot"
 msgstr "Trouvée grâce à l'heure de prise de vue"
 
-#: includes/ToolsPage.php:173
+#: includes/ToolsPage.php:207
 msgid "No time of day in the observation"
 msgstr "Pas d'heure dans l'observation"
 
-#: includes/ToolsPage.php:174
+#: includes/ToolsPage.php:208
 msgid "No photo of the media library taken at that time"
 msgstr "Aucune photo de la médiathèque prise à ce moment"
 
 #. translators: 1: number linked, 2: number of observations.
-#: includes/ToolsPage.php:192
+#: includes/ToolsPage.php:226
 #, php-format
 msgid "%1$d of the %2$d latest observations are linked to a photo of the media library."
 msgstr "%1$d des %2$d dernières observations sont liées à une photo de la médiathèque."
 
-#: includes/ToolsPage.php:202
+#: includes/ToolsPage.php:236
 msgid "Log"
 msgstr "Journal"
 
-#: includes/ToolsPage.php:204
+#: includes/ToolsPage.php:238
 msgid "Nothing yet."
 msgstr "Rien pour l'instant."
 
-#: includes/ToolsPage.php:226
+#: includes/ToolsPage.php:260
 msgid "You do not have permission to do this."
 msgstr "Vous n'avez pas la permission de faire cela."
 

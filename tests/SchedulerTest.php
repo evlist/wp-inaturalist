@@ -75,4 +75,11 @@ final class SchedulerTest extends TestCase {
 		$this->assertSame( 'running', $state['status'] );
 		$this->assertSame( 'cron', $state['trigger'] );
 	}
+
+	public function test_the_daily_callback_synchronises_once_a_full_load_exists() {
+		update_option( Config::LOGIN, 'me' );
+		\Evlist\WpInaturalist\SyncState::fullLoadDone( 'me', time() - 86400, '2019-02-01' );
+		Scheduler::runDaily();
+		$this->assertSame( 'sync', Scheduler::job()->state()['trigger'] );
+	}
 }

@@ -53,6 +53,9 @@ Slice 006 groups the cached observations by taxon (one entry per species with a 
 
 Use the site locale for `preferred_common_name`, with a fallback to the Latin name. Is a per-block override wanted?
 
+Slice 009 answers the first two points (see its document): the **initial load** of all the observations is proposed, and the daily
+run becomes an incremental synchronisation with a weekly full reconciliation.
+
 ## 4. Cron details
 
 Provisional (slice 004): the daily run looks at the last 14 days, a manual range can go back up to about ten years, and the

@@ -44,6 +44,127 @@ final class Cache {
 	}
 
 	/**
+	 * Stores observations in place (no range is replaced): each is inserted or updated by its id.
+	 *
+	 * @param string        $login        iNaturalist login.
+	 * @param Observation[] $observations Observations.
+	 * @param string        $locale       Language of the common names.
+	 * @param int           $now          Timestamp of the fetch.
+	 * @throws \RuntimeException When the database refuses a write.
+	 */
+	public function upsertMany( string $login, array $observations, string $locale, int $now ): void {
+		foreach ( $observations as $o ) {
+			$this->upsert( $login, $o, $locale, $now );
+		}
+	}
+
+	/**
+	 * Removes observations by id (observations that no longer pass the quality filter).
+	 *
+	 * @param int[] $ids Observation ids.
+	 * @throws \RuntimeException When the database refuses the delete.
+	 */
+	public function deleteIds( array $ids ): void {
+		$ids = array_values(
+			array_unique(
+				array_filter(
+					array_map( 'intval', $ids ),
+					static function ( $id ) {
+						return $id > 0;
+					}
+				)
+			)
+		);
+		if ( array() === $ids ) {
+			return;
+		}
+		// The table name is built from the site prefix and a constant; the ids are integers.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( false === $this->db->query( "DELETE FROM {$this->table} WHERE observation_id IN (" . implode( ',', $ids ) . ')' ) ) {
+			throw new \RuntimeException( 'The database refused to remove observations.' );
+		}
+	}
+
+	/**
+	 * Removes the observations of every account but one.
+	 *
+	 * @param string $login iNaturalist login to keep.
+	 * @throws \RuntimeException When the database refuses the delete.
+	 */
+	public function deleteOtherAccounts( string $login ): void {
+		// The table name is built from the site prefix and a constant; the login is prepared.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		if ( false === $this->db->query( $this->db->prepare( "DELETE FROM {$this->table} WHERE user_login <> %s", $login ) ) ) {
+			throw new \RuntimeException( 'The database refused to remove the observations of other accounts.' );
+		}
+	}
+
+	/**
+	 * Cached observations by id.
+	 *
+	 * @param int[] $ids Observation ids.
+	 * @return array<int,array<string,mixed>> Rows of the table.
+	 */
+	public function getByIds( array $ids ): array {
+		$ids = array_values(
+			array_unique(
+				array_filter(
+					array_map( 'intval', $ids ),
+					static function ( $id ) {
+						return $id > 0;
+					}
+				)
+			)
+		);
+		if ( array() === $ids ) {
+			return array();
+		}
+		// The table name is built from the site prefix and a constant; the ids are integers.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $this->db->get_results( "SELECT * FROM {$this->table} WHERE observation_id IN (" . implode( ',', $ids ) . ') ORDER BY observed_on ASC, observation_id ASC', ARRAY_A );
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Inserts or updates one observation.
+	 *
+	 * @param string      $login  iNaturalist login.
+	 * @param Observation $o      Observation.
+	 * @param string      $locale Language of the common names.
+	 * @param int         $now    Timestamp of the fetch.
+	 * @throws \RuntimeException When the database refuses the write.
+	 */
+	private function upsert( string $login, Observation $o, string $locale, int $now ): void {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$ok = $this->db->replace(
+			$this->table,
+			array(
+				'observation_id'   => $o->id,
+				'user_login'       => $login,
+				'uuid'             => $o->uuid,
+				'uri'              => $o->uri,
+				'observed_on'      => $o->observedOn,
+				'time_observed_at' => $o->timeObservedAt,
+				'time_zone'        => $o->timeZone,
+				'quality_grade'    => $o->qualityGrade,
+				'taxon_id'         => $o->taxonId,
+				'scientific_name'  => $o->scientificName,
+				'common_name'      => $o->commonName,
+				'names_locale'     => $locale,
+				'taxon_rank'       => $o->rank,
+				'iconic_taxon'     => $o->iconicTaxon,
+				'wikipedia_url'    => $o->wikipediaUrl,
+				'photos'           => wp_json_encode( $o->photos ),
+				'fetched_at'       => gmdate( 'Y-m-d H:i:s', $now ),
+			),
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
+		);
+		if ( false === $ok ) {
+			throw new \RuntimeException( 'The database refused to store an observation.' );
+		}
+	}
+
+	/**
 	 * Stores what the API returned for a date range and removes the rows of that range it no longer returns.
 	 *
 	 * @param string        $login        iNaturalist login.
@@ -58,33 +179,7 @@ final class Cache {
 		$ids = array();
 		foreach ( $observations as $o ) {
 			$ids[] = $o->id;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$ok = $this->db->replace(
-				$this->table,
-				array(
-					'observation_id'   => $o->id,
-					'user_login'       => $login,
-					'uuid'             => $o->uuid,
-					'uri'              => $o->uri,
-					'observed_on'      => $o->observedOn,
-					'time_observed_at' => $o->timeObservedAt,
-					'time_zone'        => $o->timeZone,
-					'quality_grade'    => $o->qualityGrade,
-					'taxon_id'         => $o->taxonId,
-					'scientific_name'  => $o->scientificName,
-					'common_name'      => $o->commonName,
-					'names_locale'     => $locale,
-					'taxon_rank'       => $o->rank,
-					'iconic_taxon'     => $o->iconicTaxon,
-					'wikipedia_url'    => $o->wikipediaUrl,
-					'photos'           => wp_json_encode( $o->photos ),
-					'fetched_at'       => gmdate( 'Y-m-d H:i:s', $now ),
-				),
-				array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
-			);
-			if ( false === $ok ) {
-				throw new \RuntimeException( 'The database refused to store an observation.' );
-			}
+			$this->upsert( $login, $o, $locale, $now );
 		}
 
 		$keep = '';

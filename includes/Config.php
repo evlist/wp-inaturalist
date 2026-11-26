@@ -31,6 +31,7 @@ final class Config {
 	const JOB_LOG        = 'wpinat_job_log';
 	const JOB_LOCK       = 'wpinat_job_lock';
 	const JOB_QUEUE      = 'wpinat_job_queue';
+	const SYNC           = 'wpinat_sync';
 
 	const BLOCK_NAME = 'wpinat/wp-inaturalist';
 	const REST_NS    = 'wpinat/v1';
@@ -45,8 +46,13 @@ final class Config {
 	const DAILY_WINDOW_DAYS = 14;
 	const CHUNK_DAYS        = 31;
 	const MAX_RANGE_DAYS    = 3660;
+	const MAX_RANGE_FULL    = 36600; // A full load or a reconciliation may go back a hundred years.
 	const TABLE_SUFFIX      = 'wpinat_observations';
 	const TAXA_SUFFIX       = 'wpinat_taxa';
+	const CHUNK_DAYS_FULL   = 92;
+	const MAX_AUTO_LOAD     = 20000;
+	const RECONCILE_DAYS    = 7;
+	const SYNC_OVERLAP_SEC  = 3600;
 	const TAXA_BATCH        = 50;
 	const TAXA_FOUND_TTL    = 7776000;  // 90 days.
 	const TAXA_ABSENT_TTL   = 2592000;  // 30 days.
@@ -79,7 +85,7 @@ final class Config {
 	public static function allOptionNames(): array {
 		return array_merge(
 			array_keys( self::settings() ),
-			array( self::SCHEMA_VERSION, self::JOB_STATE, self::JOB_LOG, self::JOB_LOCK, self::JOB_QUEUE )
+			array( self::SCHEMA_VERSION, self::JOB_STATE, self::JOB_LOG, self::JOB_LOCK, self::JOB_QUEUE, self::SYNC )
 		);
 	}
 

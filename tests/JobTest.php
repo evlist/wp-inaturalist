@@ -62,6 +62,9 @@ final class JobTest extends TestCase {
 			public function fetchObservations( $login, $from, $to, $options ) {
 				return $this->test->answer( $login, $from, $to, $options );
 			}
+			public function fetchUpdated( $login, $since, $options ) {
+				return $this->test->answerUpdated( $login, $since, $options );
+			}
 		};
 		return new Job(
 			new Cache( $GLOBALS['wpdb'] ),
@@ -96,6 +99,23 @@ final class JobTest extends TestCase {
 		}
 		if ( is_callable( $next ) ) {
 			return $next();
+		}
+		return null === $next ? array() : $next;
+	}
+
+	/**
+	 * Called by the fake client for a synchronisation (public only for that reason).
+	 *
+	 * @param string             $login   Login.
+	 * @param \DateTimeInterface $since   Moment.
+	 * @param array              $options Options.
+	 * @throws \Throwable What the script says the client throws.
+	 */
+	public function answerUpdated( $login, $since, $options ) {
+		$this->calls[] = array( $login, 'updated since', gmdate( 'Y-m-d\\TH:i:s', $since->getTimestamp() ) . '+00:00', $options );
+		$next          = array_shift( $this->script );
+		if ( $next instanceof \Throwable ) {
+			throw $next;
 		}
 		return null === $next ? array() : $next;
 	}
@@ -491,6 +511,9 @@ final class JobTest extends TestCase {
 			public function fetchObservations( $login, $from, $to, $options ) {
 				return $this->test->answer( $login, $from, $to, $options );
 			}
+			public function fetchUpdated( $login, $since, $options ) {
+				return $this->test->answerUpdated( $login, $since, $options );
+			}
 		};
 		return new Job(
 			new Cache( $GLOBALS['wpdb'] ),
@@ -578,5 +601,269 @@ final class JobTest extends TestCase {
 		$this->assertSame( Job::DONE, $job->state()['status'] );
 		$this->assertSame( array( 1 ), array_keys( $GLOBALS['wpdb']->rows ) );
 		$this->assertContains( 'Resolving the taxa with Wikidata failed: Server error 503.', $this->logMessages() );
+	}
+
+	private function load_state( array $over = array() ): void {
+		\Evlist\WpInaturalist\SyncState::fullLoadDone( 'me', 1699000000, '2019-02-01' );
+		foreach ( $over as $k => $v ) {
+			update_option( Config::SYNC, array_merge( \Evlist\WpInaturalist\SyncState::get(), array( $k => $v ) ) );
+		}
+	}
+
+	public function test_a_full_load_is_cut_in_chunks_of_92_days_and_the_others_in_31() {
+		$this->job()->start( '2026-01-01', '2026-04-10', 'initial' );
+		$this->assertCount( 2, $this->job()->state()['ranges'], '100 days: 92 + 8' );
+		$this->assertSame( array( '2026-01-01', '2026-04-02' ), $this->job()->state()['ranges'][0] );
+		update_option( Config::JOB_STATE, array() );
+		$this->job()->start( '2026-01-01', '2026-04-10', 'manual' );
+		$this->assertCount( 4, $this->job()->state()['ranges'] );
+		update_option( Config::JOB_STATE, array() );
+		$this->job()->start( '2026-01-01', '2026-04-10', 'reconcile' );
+		$this->assertCount( 2, $this->job()->state()['ranges'] );
+	}
+
+	public function test_a_synchronisation_is_one_chunk_with_the_updated_marker() {
+		$this->assertSame( 'started', $this->job()->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' ) );
+		$this->assertSame( array( array( '@updated', '2026-11-24T10:00:00+00:00' ) ), $this->job()->state()['ranges'] );
+		$this->assertContains( 'Synchronisation started (sync): observations updated since 2026-11-24T10:00:00+00:00.', $this->logMessages() );
+	}
+
+	/**
+	 * @dataProvider badMoments
+	 * @param string $moment Moment.
+	 */
+	public function test_a_bad_moment_is_a_bad_range( string $moment ) {
+		$this->assertSame( 'bad_range', $this->job()->start( Job::UPDATED, $moment, 'sync' ) );
+		$this->assertFalse( get_option( Config::JOB_STATE, false ) );
+	}
+
+	public function badMoments(): array {
+		return array(
+			'a date'         => array( '2026-11-24' ),
+			'with an offset' => array( '2026-11-24T10:00:00+01:00' ),
+			'garbage'        => array( 'yesterday' ),
+			'empty'          => array( '' ),
+			'injection'      => array( '2026-11-24T10:00:00+00:00&x=1' ),
+		);
+	}
+
+	public function test_a_synchronisation_can_be_queued_like_a_range() {
+		$this->job()->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->assertSame( 'queued', $this->job()->request( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' ) );
+		$this->assertSame( 'queued', $this->job()->request( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' ) );
+		$this->assertSame( 'bad_range', $this->job()->request( Job::UPDATED, 'nope', 'sync' ) );
+		$this->assertSame( array( array( '@updated', '2026-11-24T10:00:00+00:00', 'sync' ) ), $this->job()->queue() );
+	}
+
+	public function test_the_daily_run_uses_the_14_day_window_until_a_full_load_exists() {
+		$this->time = strtotime( '2026-11-25 12:00:00 UTC' );
+		$this->job()->startDaily();
+		$this->assertSame( 'cron', $this->job()->state()['trigger'] );
+		$this->assertSame( '2026-11-12', $this->job()->state()['ranges'][0][0] );
+	}
+
+	public function test_after_a_full_load_the_daily_run_synchronises_from_the_last_synchronisation_minus_the_margin() {
+		$this->time = 1699000000 + 86400;
+		$this->load_state();
+		$this->job()->startDaily();
+		$state = $this->job()->state();
+		$this->assertSame( 'sync', $state['trigger'] );
+		$this->assertSame( array( array( '@updated', gmdate( 'Y-m-d\\TH:i:s', 1699000000 - Config::SYNC_OVERLAP_SEC ) . '+00:00' ) ), $state['ranges'] );
+	}
+
+	public function test_a_week_after_the_last_reconciliation_the_daily_run_reloads_everything() {
+		$this->time = 1699000000 + 8 * 86400;
+		$this->load_state();
+		$this->job()->startDaily();
+		$state = $this->job()->state();
+		$this->assertSame( 'reconcile', $state['trigger'] );
+		$this->assertSame( '2019-02-01', $state['ranges'][0][0], 'from the first observation' );
+	}
+
+	public function test_a_changed_login_goes_back_to_the_window() {
+		$this->time = 1699000000 + 86400;
+		$this->load_state();
+		update_option( Config::LOGIN, 'someone-else' );
+		$this->job()->startDaily();
+		$this->assertSame( 'cron', $this->job()->state()['trigger'] );
+	}
+
+	public function test_a_synchronisation_stores_in_place_and_does_not_touch_other_rows() {
+		$this->load_state();
+		( new Cache( $GLOBALS['wpdb'] ) )->replaceRange( 'me', '2026-01-01', '2026-12-31', array( $this->observation( 1, '2026-03-03' ), $this->observation( 2, '2026-05-05' ) ), 'fr', 1 );
+		$changed             = $this->observation( 1, '2026-03-03' );
+		$changed->commonName = 'nouveau nom';
+		$this->script        = array( array( $changed, $this->observation( 3, '2024-01-01' ) ) );
+		$job                 = $this->job();
+		$job->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' );
+		$job->step();
+		$this->assertSame( array( 1, 2, 3 ), array_keys( $GLOBALS['wpdb']->rows ), 'observation 2 was not returned and is kept' );
+		$this->assertSame( 'nouveau nom', $GLOBALS['wpdb']->rows[1]['common_name'] );
+		$this->assertSame( Job::DONE, $job->state()['status'] );
+		$this->assertSame( 'me', $this->calls[0][0] );
+		$this->assertArrayNotHasKey( 'quality', $this->calls[0][3], 'the quality filter is not sent: a downgrade must come back' );
+	}
+
+	public function test_an_observation_that_no_longer_passes_the_quality_filter_is_removed() {
+		$this->load_state();
+		( new Cache( $GLOBALS['wpdb'] ) )->replaceRange( 'me', '2026-01-01', '2026-12-31', array( $this->observation( 1, '2026-03-03' ), $this->observation( 2, '2026-05-05' ) ), 'fr', 1 );
+		$downgraded               = $this->observation( 1, '2026-03-03' );
+		$downgraded->qualityGrade = 'needs_id';
+		$this->script             = array( array( $downgraded ) );
+		$job                      = $this->job();
+		$job->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' );
+		$job->step();
+		$this->assertSame( array( 2 ), array_keys( $GLOBALS['wpdb']->rows ) );
+	}
+
+	public function test_with_all_observations_wanted_a_downgraded_one_is_kept() {
+		update_option( Config::QUALITY, 'any' );
+		$downgraded               = $this->observation( 1, '2026-03-03' );
+		$downgraded->qualityGrade = 'needs_id';
+		$this->script             = array( array( $downgraded ) );
+		$job                      = $this->job();
+		$job->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' );
+		$job->step();
+		$this->assertSame( array( 1 ), array_keys( $GLOBALS['wpdb']->rows ) );
+	}
+
+	public function test_a_synchronisation_links_photos_and_resolves_taxa_for_the_changed_observations_only() {
+		$linker   = new class() {
+			public $rows   = array();
+			public $ranges = array();
+			public function linkRows( $rows ) {
+				$this->rows[] = array_column( $rows, 'observation_id' );
+			}
+			public function linkRange( $login, $from, $to ) {
+				$this->ranges[] = array( $from, $to );
+			}
+		};
+		$resolver = new class() {
+			public $ids = array();
+			public function resolve( $ids, $lang, $now ) {
+				$this->ids[] = $ids;
+				return array(
+					'found'  => 0,
+					'absent' => 0,
+				);
+			}
+		};
+		( new Cache( $GLOBALS['wpdb'] ) )->replaceRange( 'me', '2026-01-01', '2026-12-31', array( $this->observation( 9, '2026-02-02' ) ), 'fr', 1 );
+		$this->script = array( array( $this->observation( 1, '2026-03-03' ), $this->observation( 2, '2026-05-05' ) ) );
+		$job          = $this->jobWith( $linker, $resolver );
+		$job->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' );
+		$job->step();
+		$this->assertSame( array( array( 1, 2 ) ), $linker->rows );
+		$this->assertSame( array(), $linker->ranges, 'no range is walked' );
+		$this->assertSame( array( array( 1001, 1002 ) ), $resolver->ids );
+	}
+
+	public function test_the_first_date_goes_back_when_an_older_observation_appears() {
+		$this->load_state();
+		$this->script = array( array( $this->observation( 3, '2017-06-06' ) ) );
+		$job          = $this->job();
+		$job->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' );
+		$job->step();
+		$this->assertSame( '2017-06-06', \Evlist\WpInaturalist\SyncState::get()['first_date'] );
+	}
+
+	public function test_a_full_load_that_ends_records_the_login_the_start_time_and_the_first_day() {
+		$this->time = 1764000000;
+		$job        = $this->job();
+		$job->start( '2025-09-01', '2025-09-10', 'initial' );
+		$this->time = 1764000500;
+		$job->step();
+		$sync = \Evlist\WpInaturalist\SyncState::get();
+		$this->assertSame( 'me', $sync['login'] );
+		$this->assertSame( 1764000000, $sync['full_at'], 'the START of the job: what changed meanwhile is caught next time' );
+		$this->assertSame( '2025-09-01', $sync['first_date'] );
+		$this->assertFalse( \Evlist\WpInaturalist\SyncState::loadNeeded() );
+	}
+
+	public function test_nothing_is_recorded_when_the_job_fails_or_is_stopped() {
+		$job = $this->job();
+		$job->start( '2025-09-01', '2025-09-10', 'initial' );
+		$this->script = array( new INatException( INatException::HTTP, 'no' ) );
+		$job->step();
+		$this->assertSame( 0, \Evlist\WpInaturalist\SyncState::get()['full_at'] );
+		$this->assertTrue( \Evlist\WpInaturalist\SyncState::loadNeeded() );
+	}
+
+	public function test_a_synchronisation_and_a_reconciliation_record_their_start_times() {
+		$this->load_state();
+		$this->time = 1700000000;
+		$job        = $this->job();
+		$job->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' );
+		$this->time = 1700000900;
+		$job->step();
+		$this->assertSame( 1700000000, \Evlist\WpInaturalist\SyncState::get()['sync_at'] );
+
+		$this->time = 1701000000;
+		$job->start( '2019-02-01', '2019-02-10', 'reconcile' );
+		$this->time = 1701000100;
+		$job->step();
+		$sync = \Evlist\WpInaturalist\SyncState::get();
+		$this->assertSame( 1701000000, $sync['reconcile_at'] );
+		$this->assertSame( 1701000000, $sync['sync_at'] );
+	}
+
+	public function test_a_manual_or_window_refresh_records_nothing() {
+		$this->load_state();
+		$before = \Evlist\WpInaturalist\SyncState::get();
+		$job    = $this->job();
+		$job->start( '2026-11-01', '2026-11-05', 'manual' );
+		$job->step();
+		$this->assertSame( $before, \Evlist\WpInaturalist\SyncState::get() );
+	}
+
+	public function test_nothing_is_recorded_when_the_login_changed_while_the_job_ran() {
+		$job = $this->job();
+		$job->start( '2025-09-01', '2025-09-10', 'initial' );
+		update_option( Config::LOGIN, 'someone-else' );
+		$job->step();
+		$this->assertSame( 0, \Evlist\WpInaturalist\SyncState::get()['full_at'] );
+	}
+
+	public function test_too_many_changes_for_one_synchronisation_plans_a_reconciliation() {
+		$this->load_state();
+		$job = $this->job();
+		$job->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' );
+		$this->script = array( new INatException( INatException::TRUNCATED, 'More observations than the page limit allows.' ) );
+		$job->step();
+		$this->assertSame( Job::FAILED, $job->state()['status'] );
+		$this->assertTrue( \Evlist\WpInaturalist\SyncState::reconcileDue( 'me', 1699000000 + 60 ), 'the next daily run reloads everything' );
+		$this->assertContains( 'Too many observations changed: a full reconciliation is planned for the next daily run.', $this->logMessages() );
+	}
+
+	public function test_a_truncated_range_refresh_does_not_plan_a_reconciliation() {
+		$this->load_state();
+		$job = $this->job();
+		$job->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->script = array( new INatException( INatException::TRUNCATED, 'x' ) );
+		$job->step();
+		$this->assertFalse( \Evlist\WpInaturalist\SyncState::reconcileDue( 'me', 1699000000 + 60 ) );
+	}
+
+	public function test_a_full_load_may_go_back_more_than_ten_years_but_a_manual_range_may_not() {
+		$this->assertSame( 'started', $this->job()->start( '2008-01-01', '2026-11-25', 'initial' ) );
+		$this->assertGreaterThan( 70, count( $this->job()->state()['ranges'] ) );
+		update_option( Config::JOB_STATE, array() );
+		$this->assertSame( 'bad_range', $this->job()->start( '2008-01-01', '2026-11-25', 'manual' ), 'the limit of manual ranges is unchanged' );
+		$this->assertSame( 'bad_range', $this->job()->start( '1800-01-01', '2026-11-25', 'initial' ), 'and a full load has a limit too' );
+	}
+
+	public function test_a_linker_that_cannot_link_rows_is_not_asked_to_walk_the_marker_as_a_range() {
+		$linker = new class() {
+			public $ranges = array();
+			public function linkRange( $login, $from, $to ) {
+				$this->ranges[] = array( $from, $to );
+			}
+		};
+		$this->script = array( array( $this->observation( 1, '2026-03-03' ) ) );
+		$job          = $this->jobWith( $linker, null );
+		$job->start( Job::UPDATED, '2026-11-24T10:00:00+00:00', 'sync' );
+		$job->step();
+		$this->assertSame( array(), $linker->ranges );
+		$this->assertSame( Job::DONE, $job->state()['status'] );
 	}
 }

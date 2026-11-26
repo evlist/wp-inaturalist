@@ -103,6 +103,16 @@ class WPINAT_Fake_Wpdb {
 					unset( $this->rows[ $id ] );
 				}
 			}
+		} elseif ( preg_match( '/^DELETE FROM \S+ WHERE observation_id IN \(([\d,]+)\)$/', $sql, $m ) ) {
+			foreach ( explode( ',', $m[1] ) as $id ) {
+				unset( $this->rows[ (int) $id ] );
+			}
+		} elseif ( preg_match( "/^DELETE FROM \\S+ WHERE user_login <> '(.*?)'$/", $sql, $m ) ) {
+			foreach ( $this->rows as $id => $row ) {
+				if ( $row['user_login'] !== $m[1] ) {
+					unset( $this->rows[ $id ] );
+				}
+			}
 		} elseif ( preg_match( '/^DELETE FROM \S+$/', $sql ) ) {
 			$this->rows = array();
 		}
@@ -140,6 +150,22 @@ class WPINAT_Fake_Wpdb {
 		$this->queries[] = $sql;
 		if ( false !== strpos( $sql, 'FROM wp_postmeta pm' ) ) {
 			return array_shift( $this->scripted_results );
+		}
+		if ( preg_match( '/^SELECT \* FROM \S+ WHERE observation_id IN \(([\d,]+)\) ORDER BY observed_on ASC, observation_id ASC$/', $sql, $m ) ) {
+			$ids = explode( ',', $m[1] );
+			$out = array();
+			foreach ( $this->rows as $id => $row ) {
+				if ( in_array( (string) $id, $ids, true ) ) {
+					$out[] = $row;
+				}
+			}
+			usort(
+				$out,
+				static function ( $a, $b ) {
+					return array( $a['observed_on'], $a['observation_id'] ) <=> array( $b['observed_on'], $b['observation_id'] );
+				}
+			);
+			return $out;
 		}
 		if ( preg_match( '/^SELECT (.*?) FROM wp_wpinat_taxa WHERE (qid IS NOT NULL AND )?taxon_id IN \(([\d,]+)\)$/', $sql, $m ) ) {
 			$ids = explode( ',', $m[3] );
@@ -237,6 +263,7 @@ function wpinat_test_reset() {
 		'blocks'       => null,
 		'cap_ids'      => array(),
 		'registered'   => array(),
+		'screen'       => null,
 		'block_types'  => array(),
 		'current_post' => null,
 		'cleared'      => array(),
@@ -451,6 +478,10 @@ function get_edit_post_link( $id ) {
 	return 'https://blog.example.test/wp-admin/post.php?post=' . $id . '&action=edit';
 }
 
+function get_current_screen() {
+	return isset( $GLOBALS['wpinat_test']['screen'] ) ? $GLOBALS['wpinat_test']['screen'] : null;
+}
+
 function get_post( $id = null ) {
 	if ( null === $id ) {
 		return isset( $GLOBALS['wpinat_test']['current_post'] ) ? $GLOBALS['wpinat_test']['current_post'] : null;
@@ -588,6 +619,7 @@ require_once WPINAT_DIR . 'includes/Cache.php';
 require_once WPINAT_DIR . 'includes/JobLog.php';
 require_once WPINAT_DIR . 'includes/Job.php';
 require_once WPINAT_DIR . 'includes/Http.php';
+require_once WPINAT_DIR . 'includes/SyncState.php';
 require_once WPINAT_DIR . 'includes/Taxa.php';
 require_once WPINAT_DIR . 'includes/WikidataClient.php';
 require_once WPINAT_DIR . 'includes/TaxonResolver.php';
@@ -601,6 +633,7 @@ require_once WPINAT_DIR . 'includes/Rest.php';
 require_once WPINAT_DIR . 'includes/Assets.php';
 require_once WPINAT_DIR . 'includes/Renderer.php';
 require_once WPINAT_DIR . 'includes/Block.php';
+require_once WPINAT_DIR . 'includes/Offer.php';
 require_once WPINAT_DIR . 'includes/ToolsPage.php';
 require_once WPINAT_DIR . 'includes/SettingsPage.php';
 require_once WPINAT_DIR . 'includes/Setup.php';

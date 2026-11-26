@@ -13,6 +13,7 @@ namespace Evlist\WpInaturalist\Tests;
 use Evlist\WpInaturalist\Assets;
 use Evlist\WpInaturalist\Block;
 use Evlist\WpInaturalist\MediaFields;
+use Evlist\WpInaturalist\Offer;
 use Evlist\WpInaturalist\PostRefresh;
 use Evlist\WpInaturalist\Rest;
 use Evlist\WpInaturalist\Schema;
@@ -52,6 +53,8 @@ final class SetupTest extends TestCase {
 				'admin_post_wpinat_job_stop -> ' . ToolsPage::class . '::onStop' => 10,
 				'admin_post_wpinat_job_resume -> ' . ToolsPage::class . '::onResume' => 10,
 				'admin_post_wpinat_cache_clear -> ' . ToolsPage::class . '::onClear' => 10,
+				'admin_post_wpinat_load_all -> ' . ToolsPage::class . '::onLoadAll' => 10,
+				'admin_notices -> ' . Offer::class . '::render' => 10,
 				'admin_menu -> ' . SettingsPage::class . '::addMenu' => 10,
 				'admin_init -> ' . SettingsPage::class . '::registerSettings' => 10,
 			),

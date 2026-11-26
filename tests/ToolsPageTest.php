@@ -11,6 +11,8 @@
 namespace Evlist\WpInaturalist\Tests;
 
 use Evlist\WpInaturalist\Cache;
+use Evlist\WpInaturalist\INatException;
+use Evlist\WpInaturalist\SyncState;
 use Evlist\WpInaturalist\Config;
 use Evlist\WpInaturalist\Job;
 use Evlist\WpInaturalist\JobLog;
@@ -66,6 +68,18 @@ final class ToolsPageTest extends TestCase {
 				ToolsPage::ACTION_CLEAR,
 				static function () {
 						return ToolsPage::handleClear();
+				},
+			),
+			'load'   => array(
+				ToolsPage::ACTION_LOAD,
+				static function () {
+					return ToolsPage::handleLoadAll(
+						new class() {
+							public function summary() {
+								throw new \LogicException( 'the API must not be asked' );
+							}
+						}
+					);
 				},
 			),
 		);
@@ -280,5 +294,198 @@ final class ToolsPageTest extends TestCase {
 		$this->renderWithObservations( array( 1 => '2026-11-20T09:00:00+01:00' ) );
 		$this->assertSame( array(), $GLOBALS['wpinat_test']['scheduled'] );
 		$this->assertArrayNotHasKey( 'attachment_id', $GLOBALS['wpdb']->rows[1], 'the report does not write links' );
+	}
+
+	/**
+	 * A fake client with a scripted summary.
+	 *
+	 * @param array|\Throwable $answer Summary or exception.
+	 */
+	private function summaryClient( $answer ) {
+		return new class( $answer ) {
+			public $asked = array();
+			private $answer;
+			public function __construct( $answer ) {
+				$this->answer = $answer;
+			}
+			public function summary( $login, $quality ) {
+				$this->asked[] = array( $login, $quality );
+				if ( $this->answer instanceof \Throwable ) {
+					throw $this->answer;
+				}
+				return $this->answer;
+			}
+		};
+	}
+
+	public function test_load_all_checks_the_account_then_starts_from_the_first_observation_to_today() {
+		$client = $this->summaryClient(
+			array(
+				'total' => 861,
+				'first' => '2019-02-01',
+			)
+		);
+		$this->assertSame( 'started', ToolsPage::handleLoadAll( $client ) );
+		$this->assertSame( array( array( 'me', 'research' ) ), $client->asked, 'with the same quality filter as the load' );
+		$state = Scheduler::job()->state();
+		$this->assertSame( 'initial', $state['trigger'] );
+		$this->assertSame( '2019-02-01', $state['ranges'][0][0] );
+		$this->assertSame( gmdate( 'Y-m-d' ), end( $state['ranges'] )[1] );
+		$this->assertSame( 861, SyncState::get()['probe']['total'] );
+		$this->assertContains( 'Loading all observations: 861 found on iNaturalist, from 2019-02-01.', array_column( ( new JobLog() )->entries(), 'message' ) );
+	}
+
+	public function test_load_all_without_a_login_does_not_ask_the_api() {
+		update_option( Config::LOGIN, '' );
+		$client = $this->summaryClient( new \LogicException( 'must not be called' ) );
+		$this->assertSame( 'no_login', ToolsPage::handleLoadAll( $client ) );
+		$this->assertSame( array(), $client->asked );
+	}
+
+	public function test_an_account_without_observations_closes_the_offer_and_says_so() {
+		$this->assertSame(
+			'nothing_found',
+			ToolsPage::handleLoadAll(
+				$this->summaryClient(
+					array(
+						'total' => 0,
+						'first' => null,
+					)
+				)
+			)
+		);
+		$this->assertFalse( SyncState::loadNeeded(), 'the offer is closed' );
+		$this->assertFalse( get_option( Config::JOB_STATE, false ), 'no job' );
+	}
+
+	public function test_a_huge_account_starts_nothing_and_shows_the_numbers() {
+		$this->assertSame(
+			'too_many',
+			ToolsPage::handleLoadAll(
+				$this->summaryClient(
+					array(
+						'total' => Config::MAX_AUTO_LOAD + 1,
+						'first' => '2010-01-01',
+					)
+				)
+			)
+		);
+		$this->assertFalse( get_option( Config::JOB_STATE, false ) );
+		$this->assertSame( Config::MAX_AUTO_LOAD + 1, SyncState::get()['probe']['total'] );
+		$this->assertTrue( SyncState::loadNeeded(), 'the offer stays: nothing was loaded' );
+		$this->assertSame(
+			'started',
+			ToolsPage::handleLoadAll(
+				$this->summaryClient(
+					array(
+						'total' => Config::MAX_AUTO_LOAD,
+						'first' => '2010-01-01',
+					)
+				)
+			),
+			'the limit itself is allowed'
+		);
+	}
+
+	public function test_an_unavailable_service_changes_nothing() {
+		$client = $this->summaryClient( new INatException( INatException::SERVER, 'down' ) );
+		$this->assertSame( 'unavailable', ToolsPage::handleLoadAll( $client ) );
+		$this->assertFalse( get_option( Config::JOB_STATE, false ) );
+		$this->assertSame( array(), SyncState::get()['probe'], 'nothing recorded' );
+	}
+
+	public function test_a_new_login_first_removes_the_observations_of_the_other_accounts() {
+		( new Cache( $GLOBALS['wpdb'] ) )->replaceRange( 'old', '2026-11-01', '2026-11-30', array( $this->observation( 1 ) ), 'fr', 1 );
+		( new Cache( $GLOBALS['wpdb'] ) )->replaceRange( 'me', '2026-11-01', '2026-11-30', array( $this->observation( 2 ) ), 'fr', 1 );
+		SyncState::fullLoadDone( 'old', 1764000000, '2019-02-01' );
+		$this->assertSame(
+			'started',
+			ToolsPage::handleLoadAll(
+				$this->summaryClient(
+					array(
+						'total' => 5,
+						'first' => '2026-11-01',
+					)
+				)
+			)
+		);
+		$this->assertSame( array( 2 ), array_keys( $GLOBALS['wpdb']->rows ) );
+	}
+
+	public function test_loading_again_for_the_same_login_removes_nothing() {
+		( new Cache( $GLOBALS['wpdb'] ) )->replaceRange( 'other', '2026-11-01', '2026-11-30', array( $this->observation( 1 ) ), 'fr', 1 );
+		SyncState::fullLoadDone( 'me', 1764000000, '2019-02-01' );
+		ToolsPage::handleLoadAll(
+			$this->summaryClient(
+				array(
+					'total' => 5,
+					'first' => '2026-11-01',
+				)
+			)
+		);
+		$this->assertSame( array( 1 ), array_keys( $GLOBALS['wpdb']->rows ) );
+	}
+
+	public function test_while_a_job_runs_the_initial_load_is_queued() {
+		Scheduler::job()->start( '2026-11-01', '2026-11-05', 'manual' );
+		$this->assertSame(
+			'queued',
+			ToolsPage::handleLoadAll(
+				$this->summaryClient(
+					array(
+						'total' => 5,
+						'first' => '2026-11-01',
+					)
+				)
+			)
+		);
+		$this->assertSame( 'initial', Scheduler::job()->queue()[0][2] );
+	}
+
+	public function test_every_code_of_the_load_has_a_notice() {
+		foreach ( array( 'loading_all', 'nothing_found', 'too_many', 'unavailable', 'queued' ) as $code ) {
+			$this->assertArrayHasKey( $code, ToolsPage::notices() );
+		}
+	}
+
+	public function test_the_page_shows_the_account_check_and_the_dates_of_the_loads_and_the_button() {
+		SyncState::recordProbe( 'me', 861, '2019-02-01', 1764000000 );
+		SyncState::fullLoadDone( 'me', 1764003600, '2019-02-01' );
+		SyncState::syncDone( 1764090000 );
+		ob_start();
+		ToolsPage::render();
+		$html = ob_get_clean();
+		$this->assertStringContainsString( '861 observations, from 2019-02-01 (checked 2025-11-24 16:00:00)', $html );
+		$this->assertStringContainsString( '2025-11-24 17:00:00', $html, 'the full load' );
+		$this->assertStringContainsString( '2025-11-25 17:00:00', $html, 'the last synchronisation' );
+		$this->assertStringContainsString( 'name="action" value="wpinat_load_all"', $html );
+		$this->assertStringContainsString( 'value="nonce-wpinat_load_all"', $html );
+	}
+
+	public function test_the_page_says_when_nothing_was_done_yet() {
+		ob_start();
+		ToolsPage::render();
+		$html = ob_get_clean();
+		$this->assertStringContainsString( 'not done yet', $html );
+		$this->assertStringContainsString( 'not done for this login', $html );
+		$this->assertStringContainsString( 'never', $html );
+	}
+
+	public function test_a_hostile_probe_in_the_option_is_escaped() {
+		update_option(
+			Config::SYNC,
+			array(
+				'probe' => array(
+					'total' => '5<script>',
+					'first' => '"><img src=x>',
+					'at'    => 0,
+				),
+			)
+		);
+		ob_start();
+		ToolsPage::render();
+		$html = ob_get_clean();
+		$this->assertStringNotContainsString( '<script>', $html );
+		$this->assertStringNotContainsString( '<img', $html );
 	}
 }

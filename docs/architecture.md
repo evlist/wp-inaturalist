@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Architecture
 
-**Slices 001 to 008 are coded (foundation, API client, settings page, cache and refresh job, refresh of a post, login check, the block, Wikidata and the index mark, photos of the media library); only the final documentation (009) is planned.** It changes as slices are written; wishes and undecided points are
+**Slices 001 to 009 are coded (foundation, API client, settings page, cache and refresh job, refresh of a post, login check, the block, Wikidata and the index mark, photos of the media library); only the final documentation (009) is planned.** It changes as slices are written; wishes and undecided points are
 in [`open-questions.md`](open-questions.md).
 
 ## Flow
@@ -55,9 +55,10 @@ The answer is stored in the table `wpinat_taxa` and used for the `data-index` ma
 | Entry point | Who may call it |
 | --- | --- |
 | Block `wpinat/wp-inaturalist` (`includes/Block.php`, `includes/Renderer.php`, `blocks/wp-inaturalist/`) | everybody (render, cache only), editors (preview) |
-| WP-Cron events `wpinat_refresh` (daily, starts the job over the last 14 days) and `wpinat_refresh_step` (single events, run the job by chunks) | WordPress |
+| WP-Cron events `wpinat_refresh` (daily: the 14-day window until a full load exists, then a synchronisation of what changed, and a full reconciliation each week) and `wpinat_refresh_step` (single events, run the job by chunks) | WordPress |
 | REST `POST /wpinat/v1/refresh` (`post_id`; the server computes the period from the saved post) | `edit_post` for that post + REST nonce |
 | REST `POST /wpinat/v1/verify-login` (`login`) | `manage_options` + REST nonce |
+| Admin notice (dashboard, plugins, settings, tools) proposing the initial load, and `admin-post.php` action `wpinat_load_all` | `manage_options` + nonce |
 | Hook `transition_post_status` (refresh of a post that becomes published and has the block) | WordPress |
 | Editor panel `js/editor.js` and settings button `js/settings.js` | editors / `manage_options` |
 | Settings page (Settings > iNaturalist), saved through `options.php` | `manage_options` (page and option group) + nonce of the option group |
@@ -66,7 +67,7 @@ The answer is stored in the table `wpinat_taxa` and used for the `data-index` ma
 
 ## Stored data (planned)
 
-- Options (names, defaults, getters in `Config`): login, names language, quality, refresh hour; `wpinat_schema_version`, `wpinat_job_state`, `wpinat_job_log` (not autoloaded), `wpinat_job_lock`, `wpinat_job_queue` (ranges waiting for the running job, not autoloaded).
+- Options (names, defaults, getters in `Config`): login, names language, quality, refresh hour; `wpinat_schema_version`, `wpinat_job_state`, `wpinat_job_log` (not autoloaded), `wpinat_job_lock`, `wpinat_job_queue` (ranges waiting for the running job, not autoloaded), `wpinat_sync` (login of the last full load, times of the last full load, synchronisation and reconciliation, first date, last account check; not autoloaded).
 - Table `{prefix}wpinat_observations` (`includes/Schema.php`, migrated from the schema version on `plugins_loaded`): one row per observation (id, login, taxon and names, dates, quality, photos as JSON, fetch time, and the media library attachment linked to it, schema version 2). The manual link of a photo to an observation is the attachment's meta `_wpinat_observation_id`.
 - Table `{prefix}wpinat_taxa` (schema version 3): one row per iNaturalist taxon id with its Wikidata item, label and Wikipedia address in the site language, and the time of the check.
 - Transients `wpinat_last_request` and `wpinat_last_wikidata` (one throttle per service).

@@ -18,4 +18,5 @@ One document per feature, written before the code. A slice is documented, then c
 | [006](006-block.md) | Block and rendering of the species list | 004, 005 | coded; see its verification status |
 | [007](007-wikidata-and-index-mark.md) | Wikidata identifiers of the taxa and the `data-index` mark for `wp-otherguise` | 004, 006 | coded; see its verification status |
 | [008](008-photos-media-library.md) | Photos: match with the media library (EXIF time), manual link, report | 006, open question 1 | coded; see its verification status |
-| 009 | Translations, release zip, documentation | all | to write |
+| [009](009-initial-load-and-incremental-sync.md) | Initial load of all the observations (proposed), incremental synchronisation and weekly reconciliation | 004, 005, 007, 008 | coded; see its verification status |
+| 010 | Translations reviewed, release zip, final documentation | all | to write |

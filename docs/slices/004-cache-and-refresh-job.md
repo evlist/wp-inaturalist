@@ -35,6 +35,9 @@ exactly this for long-running work, and for a schema that does not depend on act
      `failed` at once. A failed chunk never leaves a half-written range: the range is written only after the whole fetch succeeded.
    - `JobLog`: the last 200 messages (time, level, text) in the option `wpinat_job_log`, not autoloaded. Messages are plain
      English, not translated, and escaped where they are displayed.
+> **Superseded in part by [slice 009](009-initial-load-and-incremental-sync.md):** once a full load exists for the login, the daily
+> event synchronises what changed (and reconciles weekly) instead of reloading the last 14 days.
+
 4. **Scheduling** (`includes/Scheduler.php`): a daily event `wpinat_refresh` at the configured hour (site time), scheduled on
    `init` when missing and rescheduled when the hour option changes; it starts a job over the **last 14 days**. The events are
    removed on deactivation and on uninstall.

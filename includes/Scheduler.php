@@ -72,7 +72,7 @@ final class Scheduler {
 	 * Cron callback of the daily event.
 	 */
 	public static function runDaily(): void {
-		self::job()->startRolling();
+		self::job()->startDaily();
 	}
 
 	/**
